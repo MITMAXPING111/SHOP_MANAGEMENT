@@ -24,7 +24,8 @@ public class InventoryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResInventoryDTO> updateInventory(@PathVariable Long id, @RequestBody ReqInventoryDTO dto) {
+    public ResponseEntity<ResInventoryDTO> updateInventory(@PathVariable Long id,
+            @RequestBody ReqInventoryDTO dto) {
         ResInventoryDTO updatedInventory = inventoryService.updateInventory(id, dto);
         return ResponseEntity.ok(updatedInventory);
     }

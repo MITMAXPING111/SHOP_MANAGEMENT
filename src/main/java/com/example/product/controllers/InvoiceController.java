@@ -24,7 +24,8 @@ public class InvoiceController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResInvoiceDTO> updateInvoice(@PathVariable Long id, @RequestBody ReqInvoiceDTO dto) {
+    public ResponseEntity<ResInvoiceDTO> updateInvoice(@PathVariable Long id,
+            @RequestBody ReqInvoiceDTO dto) {
         ResInvoiceDTO updatedInvoice = invoiceService.updateInvoice(id, dto);
         return ResponseEntity.ok(updatedInvoice);
     }

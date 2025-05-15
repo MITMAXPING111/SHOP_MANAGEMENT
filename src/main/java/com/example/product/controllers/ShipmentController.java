@@ -24,7 +24,8 @@ public class ShipmentController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResShipmentDTO> updateShipment(@PathVariable Long id, @RequestBody ReqShipmentDTO dto) {
+    public ResponseEntity<ResShipmentDTO> updateShipment(@PathVariable Long id,
+            @RequestBody ReqShipmentDTO dto) {
         ResShipmentDTO updatedShipment = shipmentService.updateShipment(id, dto);
         return ResponseEntity.ok(updatedShipment);
     }

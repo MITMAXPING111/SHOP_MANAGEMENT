@@ -1,0 +1,18 @@
+package com.example.product.constants;
+
+public enum PermissionEnum {
+    CREATE_USER,
+    READ_USER,
+    READ_USER_ID,
+    UPDATE_USER,
+    UPDATE_USER_ID,
+    DELETE_USER,
+    DELETE_USER_ID,
+    CREATE_CATEGORY,
+    READ_CATEGORY,
+    READ_CATEGORY_ID,
+    UPDATE_CATEGORY,
+    UPDATE_CATEGORY_ID,
+    DELETE_CATEGORY,
+    DELETE_CATEGORY_ID,
+}

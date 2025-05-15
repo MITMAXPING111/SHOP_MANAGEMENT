@@ -1,39 +1,48 @@
 package com.example.product.entities;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.example.product.constants.GenderEnum;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "users")
-
+@Table(name = "TBL_USERS")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
-    private String username;
-    private String password;
-    private String fullName;
     private String email;
-    private String role; // ADMIN, SALE, WAREHOUSE
+    private String password;
+    private String name;
+    private boolean enabled = true; // tài khoản bị khóa/mở
+    private String phone;
+    private String avatar;
 
-    private Boolean active;
+    private String province; // Tỉnh/Thành phố
+    private String ward; // Phường/Xã
+    @Lob
+    private String addressDetail; // Số nhà, tên đường
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private String createdBy;
-    private String updatedBy;
+    @Enumerated(EnumType.STRING)
+    private GenderEnum gender;
+
+    private String createBy;
+    private LocalDateTime createAt;
+    private String updateBy;
+    private LocalDateTime updateAt;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<Role> roles = new HashSet<>();
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private AccountImage accountImage;
 }

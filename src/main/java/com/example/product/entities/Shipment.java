@@ -2,40 +2,35 @@ package com.example.product.entities;
 
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.example.product.constants.StatusShipment;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "shipments")
+@Table(name = "TBL_SHIPMENTS")
 public class Shipment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String trackingNumber;
-    private String carrier;
+    private String trackingNumber; // mã đơn
+    private String carrier; // người vận chuyển
     private LocalDateTime shippedDate;
     private LocalDateTime deliveredDate;
 
-    @OneToOne
-    private Order order;
-
-    private String status; // PENDING, SHIPPED, DELIVERED, RETURNED
+    @Enumerated(EnumType.STRING)
+    private StatusShipment status = StatusShipment.PENDING; // PENDING, SHIPPED, DELIVERED, RETURNED
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String createdBy;
     private String updatedBy;
+
+    @OneToOne
+    @JoinColumn(name = "order_id", unique = true)
+    private Order order;
 }

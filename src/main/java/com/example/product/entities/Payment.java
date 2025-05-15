@@ -2,41 +2,39 @@ package com.example.product.entities;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.example.product.constants.PaymentMethod;
+import com.example.product.constants.StatusPayment;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "payments")
+@Table(name = "TBL_PAYMENTS")
 public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private LocalDateTime paymentDate;
-    private String paymentMethod;
+    private PaymentMethod paymentMethod;
     private BigDecimal amount;
 
-    @ManyToOne
-    private Order order;
-
     private String transactionId;
-    private String status; // SUCCESS, FAILED, PENDING
+
+    @Enumerated(EnumType.STRING)
+    private StatusPayment status; // SUCCESS, FAILED, PENDING
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String createdBy;
     private String updatedBy;
+
+    @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Order> orders = new ArrayList<>();
 }

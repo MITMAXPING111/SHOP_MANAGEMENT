@@ -24,7 +24,8 @@ public class OrderItemController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResOrderItemDTO> updateOrderItem(@PathVariable Long id, @RequestBody ReqOrderItemDTO dto) {
+    public ResponseEntity<ResOrderItemDTO> updateOrderItem(@PathVariable Long id,
+            @RequestBody ReqOrderItemDTO dto) {
         ResOrderItemDTO updatedItem = orderItemService.updateOrderItem(id, dto);
         return ResponseEntity.ok(updatedItem);
     }

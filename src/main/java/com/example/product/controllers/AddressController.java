@@ -24,7 +24,8 @@ public class AddressController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResAddressDTO> updateAddress(@PathVariable Long id, @RequestBody ReqAddressDTO dto) {
+    public ResponseEntity<ResAddressDTO> updateAddress(@PathVariable Long id,
+            @RequestBody ReqAddressDTO dto) {
         ResAddressDTO updatedAddress = addressService.updateAddress(id, dto);
         return ResponseEntity.ok(updatedAddress);
     }

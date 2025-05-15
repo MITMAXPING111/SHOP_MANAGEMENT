@@ -3,42 +3,37 @@ package com.example.product.entities;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.example.product.constants.PaymentMethod;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "invoices")
+@Table(name = "TBL_INVOICES")
 public class Invoice {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String invoiceNumber;
-    private LocalDateTime issuedDate;
-
-    @OneToOne
-    private Order order;
+    private String invoiceNumber; // số hóa đơn
+    private LocalDateTime issuedDate; // ngày xuất hóa đơn
 
     private BigDecimal totalAmount;
-    private BigDecimal vat;
+    private BigDecimal vat = new BigDecimal("10"); // 10% mặc định
     private BigDecimal discount;
 
-    private String paymentMethod; // CASH, CREDIT_CARD, BANK_TRANSFER
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod paymentMethod; // COD, CREDIT_CARD, BANK_TRANSFER
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String createdBy;
     private String updatedBy;
+
+    @OneToOne
+    @JoinColumn(name = "order_id", unique = true)
+    private Order order;
 }
