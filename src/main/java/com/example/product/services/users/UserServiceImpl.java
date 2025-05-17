@@ -92,7 +92,7 @@ public class UserServiceImpl implements UserService {
     public void updateUserToken(String token, String email) {
         User currentUser = this.handleGetUserByUsername(email);
         if (currentUser != null) {
-            currentUser.setRefreshToken(token);
+            currentUser.setAccessToken(token);
             this.userRepository.save(currentUser);
 
         }

@@ -38,6 +38,28 @@ public class Customer {
     private String updateBy;
     private LocalDateTime updateAt;
 
+    @Column(name = "current_refresh_token")
+    private String currentRefreshToken;
+
+    public String getCurrentRefreshToken() {
+        return currentRefreshToken;
+    }
+
+    public void setCurrentRefreshToken(String currentRefreshToken) {
+        this.currentRefreshToken = currentRefreshToken;
+    }
+
+    @Column(name = "current_access_token")
+    private String currentAccessToken;
+
+    public String getCurrentAccessToken() {
+        return currentRefreshToken;
+    }
+
+    public void setCurrentAccessToken(String currentAccessToken) {
+        this.currentAccessToken = currentAccessToken;
+    }
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "customer_role", joinColumns = @JoinColumn(name = "customer_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();

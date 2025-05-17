@@ -1,6 +1,7 @@
 package com.example.product.utils;
 
 import com.example.product.configs.CustomerDetailsImpl;
+import com.example.product.configs.TokenBlacklistService;
 import com.example.product.configs.UserDetailsImpl;
 import com.example.product.entities.users.Customer;
 import com.example.product.entities.users.User;
@@ -8,6 +9,7 @@ import com.example.product.entities.users.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
 
     @Value("${product.jwt.base64-secret}")
     private String SECRET_KEY;
@@ -93,7 +97,11 @@ public class JwtService {
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         String email = extractEmail(token);
-        return email.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        boolean isSameUser = email.equals(userDetails.getUsername());
+        boolean isNotExpired = !isTokenExpired(token);
+        boolean isNotBlacklisted = !tokenBlacklistService.isBlacklisted(token);
+
+        return isSameUser && isNotExpired && isNotBlacklisted;
     }
 
     private boolean isTokenExpired(String token) {

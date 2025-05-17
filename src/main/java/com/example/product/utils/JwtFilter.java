@@ -12,6 +12,8 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.example.product.configs.TokenBlacklistService;
+
 import java.io.IOException;
 
 @Component
@@ -21,6 +23,9 @@ public class JwtFilter extends OncePerRequestFilter {
     private JwtService jwtService;
     @Autowired
     private CustomUserDetailsService userDetailsService;
+
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -34,6 +39,16 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         final String jwt = authHeader.substring(7); // Lấy JWT từ header
+        System.out.println("Token từ client: " + jwt + " | Hash: " + jwt.hashCode());
+
+        // **Kiểm tra token có bị blacklist không**
+        if (tokenBlacklistService.isBlacklisted(jwt)) {
+            // Nếu token đã bị blacklist, trả về 401 và không tiếp tục xử lý
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token đã bị thu hồi, vui lòng đăng nhập lại.");
+            return;
+        }
+
         final String email = jwtService.extractUsername(jwt); // Lấy email từ token
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {

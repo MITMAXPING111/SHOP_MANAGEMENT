@@ -8,6 +8,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.web.bind.annotation.*;
 
 import com.example.product.configs.CustomerDetailsImpl;
+import com.example.product.configs.TokenBlacklistService;
 import com.example.product.configs.UserDetailsImpl;
 import com.example.product.entities.users.Customer;
 import com.example.product.entities.users.User;
@@ -38,48 +39,102 @@ public class AuthController {
         @Autowired
         private CustomerRepository customerRepo;
 
+        @Autowired
+        private TokenBlacklistService tokenBlacklistService;
+
         @PostMapping("/login")
         public ResponseEntity<?> login(@RequestBody ReqAuthDTO request, HttpServletResponse response) {
                 // Xác thực tài khoản
                 authManager.authenticate(
                                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
-                // Kiểm tra User
+                // Xử lý User
                 Optional<User> userOpt = userRepo.findByEmail(request.getEmail());
                 if (userOpt.isPresent()) {
                         User user = userOpt.get();
+
+                        // Blacklist token cũ nếu có
+                        String oldRefreshToken = user.getRefreshToken();
+                        String oldAccessToken = user.getAccessToken();
+                        // Blacklist cả access token và refresh token cũ nếu tồn tại
+                        if (oldAccessToken != null || oldRefreshToken != null) {
+                                if (oldAccessToken != null) {
+                                        tokenBlacklistService.blacklistToken(oldAccessToken);
+                                }
+                                if (oldRefreshToken != null) {
+                                        tokenBlacklistService.blacklistToken(oldRefreshToken);
+                                }
+                        }
+
                         UserDetailsImpl userDetails = new UserDetailsImpl(user);
+                        String newAccessToken = jwtService.generateToken(userDetails);
+                        String newRefreshToken = jwtService.generateRefreshToken(userDetails);
 
-                        String jwt = jwtService.generateToken(userDetails);
-                        String refreshToken = jwtService.generateRefreshToken(userDetails);
+                        // Cập nhật token mới
+                        user.setAccessToken(newAccessToken);
+                        user.setRefreshToken(newRefreshToken);
+                        userRepo.save(user);
 
-                        ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
+                        // Xóa cookie cũ và set cookie mới
+                        ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
                                         .httpOnly(true)
                                         .path("/api/v1/auth/refresh")
-                                        .maxAge(7 * 24 * 60 * 60) // 7 ngày
+                                        .maxAge(0)
+                                        .build();
+                        response.addHeader("Set-Cookie", deleteCookie.toString());
+
+                        ResponseCookie cookie = ResponseCookie.from("refresh_token", newRefreshToken)
+                                        .httpOnly(true)
+                                        .path("/api/v1/auth/refresh")
+                                        .maxAge(7 * 24 * 60 * 60)
                                         .build();
                         response.addHeader("Set-Cookie", cookie.toString());
 
-                        return ResponseEntity.ok(new ResAuthDTO(jwt, "Đăng nhập thành công dưới vai trò: User"));
+                        return ResponseEntity
+                                        .ok(new ResAuthDTO(newAccessToken, "Đăng nhập thành công dưới vai trò: User"));
                 }
 
-                // Kiểm tra Customer
+                // Xử lý Customer
                 Optional<Customer> customerOpt = customerRepo.findByEmail(request.getEmail());
                 if (customerOpt.isPresent()) {
                         Customer customer = customerOpt.get();
+
+                        String oldRefreshToken = customer.getCurrentRefreshToken();
+                        String oldAccessToken = customer.getCurrentAccessToken();
+                        // Blacklist cả access token và refresh token cũ nếu tồn tại
+                        if (oldAccessToken != null || oldRefreshToken != null) {
+                                if (oldAccessToken != null) {
+                                        tokenBlacklistService.blacklistToken(oldAccessToken);
+                                }
+                                if (oldRefreshToken != null) {
+                                        tokenBlacklistService.blacklistToken(oldRefreshToken);
+                                }
+                        }
+
                         CustomerDetailsImpl customerDetails = new CustomerDetailsImpl(customer);
+                        String newAccessToken = jwtService.generateToken(customerDetails);
+                        String newRefreshToken = jwtService.generateRefreshToken(customerDetails);
 
-                        String jwt = jwtService.generateToken(customerDetails);
-                        String refreshToken = jwtService.generateRefreshToken(customerDetails);
+                        customer.setCurrentAccessToken(newAccessToken);
+                        customer.setCurrentRefreshToken(newRefreshToken);
+                        customerRepo.save(customer);
 
-                        ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
+                        ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
                                         .httpOnly(true)
                                         .path("/api/v1/auth/refresh")
-                                        .maxAge(7 * 24 * 60 * 60) // 7 ngày
+                                        .maxAge(0)
+                                        .build();
+                        response.addHeader("Set-Cookie", deleteCookie.toString());
+
+                        ResponseCookie cookie = ResponseCookie.from("refresh_token", newRefreshToken)
+                                        .httpOnly(true)
+                                        .path("/api/v1/auth/refresh")
+                                        .maxAge(7 * 24 * 60 * 60)
                                         .build();
                         response.addHeader("Set-Cookie", cookie.toString());
 
-                        return ResponseEntity.ok(new ResAuthDTO(jwt, "Đăng nhập thành công dưới vai trò: Customer"));
+                        return ResponseEntity.ok(
+                                        new ResAuthDTO(newAccessToken, "Đăng nhập thành công dưới vai trò: Customer"));
                 }
 
                 return ResponseEntity.status(401).body("Email hoặc mật khẩu không đúng");
@@ -108,36 +163,75 @@ public class AuthController {
 
                 Optional<User> userOpt = userRepo.findByEmail(email);
                 if (userOpt.isPresent()) {
-                        UserDetailsImpl userDetails = new UserDetailsImpl(userOpt.get());
-                        if (jwtService.isTokenValid(refreshToken, userDetails)) {
-                                String newAccessToken = jwtService.generateToken(userDetails);
-                                return ResponseEntity
-                                                .ok(new ResAuthDTO(newAccessToken, "Làm mới token thành công (User)"));
+                        User user = userOpt.get();
+                        if (!refreshToken.equals(user.getRefreshToken()) ||
+                                        tokenBlacklistService.isBlacklisted(refreshToken)) {
+                                return ResponseEntity.status(403).body("Refresh token không hợp lệ");
                         }
+
+                        UserDetailsImpl userDetails = new UserDetailsImpl(user);
+                        String newAccessToken = jwtService.generateToken(userDetails);
+                        user.setAccessToken(newAccessToken);
+                        userRepo.save(user);
+                        return ResponseEntity.ok(new ResAuthDTO(newAccessToken, "Làm mới token thành công (User)"));
                 }
 
                 Optional<Customer> customerOpt = customerRepo.findByEmail(email);
                 if (customerOpt.isPresent()) {
-                        CustomerDetailsImpl customerDetails = new CustomerDetailsImpl(customerOpt.get());
-                        if (jwtService.isTokenValid(refreshToken, customerDetails)) {
-                                String newAccessToken = jwtService.generateToken(customerDetails);
-                                return ResponseEntity.ok(
-                                                new ResAuthDTO(newAccessToken, "Làm mới token thành công (Customer)"));
+                        Customer customer = customerOpt.get();
+                        if (!refreshToken.equals(customer.getCurrentRefreshToken()) ||
+                                        tokenBlacklistService.isBlacklisted(refreshToken)) {
+                                return ResponseEntity.status(403).body("Refresh token không hợp lệ");
                         }
+
+                        CustomerDetailsImpl customerDetails = new CustomerDetailsImpl(customer);
+                        String newAccessToken = jwtService.generateToken(customerDetails);
+                        customer.setCurrentAccessToken(newAccessToken);
+                        customerRepo.save(customer);
+                        return ResponseEntity.ok(new ResAuthDTO(newAccessToken, "Làm mới token thành công (Customer)"));
                 }
 
                 return ResponseEntity.status(403).body("Refresh token không hợp lệ");
         }
 
         @PostMapping("/logout")
-        public ResponseEntity<?> logout(HttpServletResponse response) {
-                ResponseCookie cookie = ResponseCookie.from("refresh_token", "")
+        public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+                String accessToken = null;
+                String refreshToken = null;
+
+                // Lấy access token từ header Authorization
+                String authHeader = request.getHeader("Authorization");
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                        accessToken = authHeader.substring(7);
+                }
+
+                // Lấy refresh token từ cookie
+                if (request.getCookies() != null) {
+                        for (var cookie : request.getCookies()) {
+                                if (cookie.getName().equals("refresh_token")) {
+                                        refreshToken = cookie.getValue();
+                                        break;
+                                }
+                        }
+                }
+
+                // Đưa cả hai token vào blacklist nếu tồn tại
+                if (accessToken != null && !tokenBlacklistService.isBlacklisted(accessToken)) {
+                        tokenBlacklistService.blacklistToken(accessToken);
+                }
+
+                if (refreshToken != null && !tokenBlacklistService.isBlacklisted(refreshToken)) {
+                        tokenBlacklistService.blacklistToken(refreshToken);
+                }
+
+                // Xóa refresh_token cookie
+                ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
                                 .httpOnly(true)
                                 .path("/api/v1/auth/refresh")
                                 .secure(true)
-                                .maxAge(0) // xóa cookie ngay lập tức
+                                .maxAge(0)
                                 .build();
-                response.addHeader("Set-Cookie", cookie.toString());
+                response.addHeader("Set-Cookie", deleteCookie.toString());
 
                 return ResponseEntity.ok("Đăng xuất thành công");
         }

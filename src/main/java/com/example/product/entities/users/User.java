@@ -35,6 +35,9 @@ public class User {
     private GenderEnum gender;
 
     @Column(columnDefinition = "MEDIUMTEXT")
+    private String accessToken;
+
+    @Column(columnDefinition = "MEDIUMTEXT")
     private String refreshToken;
 
     private String createBy;
