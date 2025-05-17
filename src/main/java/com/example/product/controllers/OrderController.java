@@ -1,32 +1,30 @@
 package com.example.product.controllers;
 
-import com.example.product.models.request.ReqOrderDTO;
-import com.example.product.models.response.ResOrderDTO;
+import com.example.product.models.request.products.ReqOrderDTO;
+import com.example.product.models.response.products.ResOrderDTO;
 import com.example.product.services.orders.OrderService;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping("/api/v1/orders")
+@RequiredArgsConstructor
 public class OrderController {
 
-    @Autowired
-    private OrderService orderService;
+    private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<ResOrderDTO> createOrder(@RequestBody ReqOrderDTO dto) {
-        ResOrderDTO createdOrder = orderService.createOrder(dto);
+    public ResponseEntity<ResOrderDTO> createOrder(@RequestBody ReqOrderDTO reqOrderDTO) {
+        ResOrderDTO createdOrder = orderService.createOrder(reqOrderDTO);
         return ResponseEntity.ok(createdOrder);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResOrderDTO> updateOrder(@PathVariable Long id,
-            @RequestBody ReqOrderDTO dto) {
-        ResOrderDTO updatedOrder = orderService.updateOrder(id, dto);
+    public ResponseEntity<ResOrderDTO> updateOrder(@PathVariable Long id, @RequestBody ReqOrderDTO reqOrderDTO) {
+        ResOrderDTO updatedOrder = orderService.updateOrder(id, reqOrderDTO);
         return ResponseEntity.ok(updatedOrder);
     }
 

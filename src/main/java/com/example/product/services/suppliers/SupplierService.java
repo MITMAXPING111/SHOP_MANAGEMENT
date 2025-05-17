@@ -1,9 +1,9 @@
 package com.example.product.services.suppliers;
 
-import java.util.List;
+import com.example.product.models.request.managers.ReqSupplierDTO;
+import com.example.product.models.response.managers.ResSupplierDTO;
 
-import com.example.product.models.request.ReqSupplierDTO;
-import com.example.product.models.response.ResSupplierDTO;
+import java.util.List;
 
 public interface SupplierService {
     ResSupplierDTO createSupplier(ReqSupplierDTO dto);

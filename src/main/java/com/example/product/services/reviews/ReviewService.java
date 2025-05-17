@@ -1,9 +1,9 @@
 package com.example.product.services.reviews;
 
-import java.util.List;
+import com.example.product.models.request.managers.ReqReviewDTO;
+import com.example.product.models.response.managers.ResReviewDTO;
 
-import com.example.product.models.request.ReqReviewDTO;
-import com.example.product.models.response.ResReviewDTO;
+import java.util.List;
 
 public interface ReviewService {
     ResReviewDTO createReview(ReqReviewDTO dto);
@@ -15,4 +15,8 @@ public interface ReviewService {
     ResReviewDTO getReviewById(Long id);
 
     List<ResReviewDTO> getAllReviews();
+
+    List<ResReviewDTO> getReviewsByProductId(Long productId);
+
+    List<ResReviewDTO> getReviewsByCustomerId(Long customerId);
 }

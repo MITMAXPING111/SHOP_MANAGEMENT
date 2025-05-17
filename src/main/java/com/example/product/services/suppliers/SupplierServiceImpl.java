@@ -1,86 +1,102 @@
 package com.example.product.services.suppliers;
 
-import com.example.product.entities.Supplier;
-import com.example.product.models.request.ReqSupplierDTO;
-import com.example.product.models.response.ResSupplierDTO;
+import com.example.product.entities.managers.Supplier;
+import com.example.product.models.request.managers.ReqSupplierDTO;
+import com.example.product.models.response.managers.ResSupplierDTO;
 import com.example.product.repositories.SupplierRepository;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class SupplierServiceImpl implements SupplierService {
 
-    @Autowired
-    private SupplierRepository supplierRepository;
+    private final SupplierRepository supplierRepository;
 
     @Override
     public ResSupplierDTO createSupplier(ReqSupplierDTO dto) {
-        Supplier supplier = new Supplier();
-        supplier.setName(dto.getName());
-        supplier.setContactName(dto.getContactName());
-        supplier.setPhone(dto.getPhone());
-        supplier.setEmail(dto.getEmail());
-        supplier.setAddress(dto.getAddress());
-        supplier.setCreatedAt(dto.getCreatedAt() != null ? dto.getCreatedAt() : LocalDateTime.now());
-        supplier.setUpdatedAt(dto.getUpdatedAt() != null ? dto.getUpdatedAt() : LocalDateTime.now());
-        supplier.setCreatedBy(dto.getCreatedBy());
-        supplier.setUpdatedBy(dto.getUpdatedBy());
-
-        return mapToResDTO(supplierRepository.save(supplier));
+        Supplier supplier = mapToEntity(dto);
+        supplier = supplierRepository.save(supplier);
+        return mapToDTO(supplier);
     }
 
     @Override
     public ResSupplierDTO updateSupplier(Long id, ReqSupplierDTO dto) {
         Supplier supplier = supplierRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Supplier not found with ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Supplier not found with ID: " + id));
 
         supplier.setName(dto.getName());
         supplier.setContactName(dto.getContactName());
         supplier.setPhone(dto.getPhone());
         supplier.setEmail(dto.getEmail());
-        supplier.setAddress(dto.getAddress());
-        supplier.setUpdatedAt(LocalDateTime.now());
+        supplier.setProvince(dto.getProvince());
+        supplier.setWard(dto.getWard());
+        supplier.setAddressDetail(dto.getAddressDetail());
+        supplier.setUpdatedAt(dto.getUpdatedAt());
         supplier.setUpdatedBy(dto.getUpdatedBy());
 
-        return mapToResDTO(supplierRepository.save(supplier));
+        return mapToDTO(supplierRepository.save(supplier));
     }
 
     @Override
     public void deleteSupplier(Long id) {
+        if (!supplierRepository.existsById(id)) {
+            throw new EntityNotFoundException("Supplier not found with ID: " + id);
+        }
         supplierRepository.deleteById(id);
     }
 
     @Override
     public ResSupplierDTO getSupplierById(Long id) {
-        return supplierRepository.findById(id)
-                .map(this::mapToResDTO)
-                .orElseThrow(() -> new RuntimeException("Supplier not found with ID: " + id));
+        Supplier supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Supplier not found with ID: " + id));
+        return mapToDTO(supplier);
     }
 
     @Override
     public List<ResSupplierDTO> getAllSuppliers() {
-        return supplierRepository.findAll()
-                .stream()
-                .map(this::mapToResDTO)
+        return supplierRepository.findAll().stream()
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
-    private ResSupplierDTO mapToResDTO(Supplier supplier) {
+    private Supplier mapToEntity(ReqSupplierDTO dto) {
+        Supplier supplier = new Supplier();
+        supplier.setName(dto.getName());
+        supplier.setContactName(dto.getContactName());
+        supplier.setPhone(dto.getPhone());
+        supplier.setEmail(dto.getEmail());
+        supplier.setProvince(dto.getProvince());
+        supplier.setWard(dto.getWard());
+        supplier.setAddressDetail(dto.getAddressDetail());
+        supplier.setCreatedAt(dto.getCreatedAt());
+        supplier.setUpdatedAt(dto.getUpdatedAt());
+        supplier.setCreatedBy(dto.getCreatedBy());
+        supplier.setUpdatedBy(dto.getUpdatedBy());
+        return supplier;
+    }
+
+    private ResSupplierDTO mapToDTO(Supplier supplier) {
         return new ResSupplierDTO(
                 supplier.getId(),
                 supplier.getName(),
                 supplier.getContactName(),
                 supplier.getPhone(),
                 supplier.getEmail(),
-                supplier.getAddress(),
+                supplier.getProvince(),
+                supplier.getWard(),
+                supplier.getAddressDetail(),
                 supplier.getCreatedAt(),
                 supplier.getUpdatedAt(),
                 supplier.getCreatedBy(),
-                supplier.getUpdatedBy());
+                supplier.getUpdatedBy(),
+                supplier.getProducts().stream()
+                        .map(product -> product.getId())
+                        .collect(Collectors.toList()));
     }
 }

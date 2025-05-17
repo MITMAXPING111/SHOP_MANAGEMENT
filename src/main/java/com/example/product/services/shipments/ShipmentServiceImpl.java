@@ -1,13 +1,15 @@
 package com.example.product.services.shipments;
 
-import com.example.product.entities.Order;
-import com.example.product.entities.Shipment;
-import com.example.product.models.request.ReqShipmentDTO;
-import com.example.product.models.response.ResShipmentDTO;
+import com.example.product.constants.StatusShipment;
+import com.example.product.entities.managers.Shipment;
+import com.example.product.entities.products.Order;
+import com.example.product.models.request.managers.ReqShipmentDTO;
+import com.example.product.models.response.managers.ResShipmentDTO;
 import com.example.product.repositories.OrderRepository;
 import com.example.product.repositories.ShipmentRepository;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,13 +17,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ShipmentServiceImpl implements ShipmentService {
 
-    @Autowired
-    private ShipmentRepository shipmentRepository;
-
-    @Autowired
-    private OrderRepository orderRepository;
+    private final ShipmentRepository shipmentRepository;
+    private final OrderRepository orderRepository;
 
     @Override
     public ResShipmentDTO createShipment(ReqShipmentDTO dto) {
@@ -30,73 +30,77 @@ public class ShipmentServiceImpl implements ShipmentService {
         shipment.setCarrier(dto.getCarrier());
         shipment.setShippedDate(dto.getShippedDate());
         shipment.setDeliveredDate(dto.getDeliveredDate());
-        shipment.setStatus(dto.getStatus());
-        shipment.setCreatedAt(dto.getCreatedAt() != null ? dto.getCreatedAt() : LocalDateTime.now());
-        shipment.setUpdatedAt(dto.getUpdatedAt() != null ? dto.getUpdatedAt() : LocalDateTime.now());
+        shipment.setStatus(dto.getStatus() != null ? dto.getStatus() : StatusShipment.PENDING);
+
+        shipment.setCreatedAt(LocalDateTime.now());
         shipment.setCreatedBy(dto.getCreatedBy());
-        shipment.setUpdatedBy(dto.getUpdatedBy());
 
         Order order = orderRepository.findById(dto.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + dto.getOrderId()));
+                .orElseThrow(() -> new EntityNotFoundException("Order not found with id: " + dto.getOrderId()));
         shipment.setOrder(order);
 
-        return mapToResDTO(shipmentRepository.save(shipment));
+        Shipment saved = shipmentRepository.save(shipment);
+        return mapToDTO(saved);
+    }
+
+    @Override
+    public ResShipmentDTO getShipmentById(Long id) {
+        Shipment shipment = shipmentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Shipment not found with id: " + id));
+        return mapToDTO(shipment);
     }
 
     @Override
     public ResShipmentDTO updateShipment(Long id, ReqShipmentDTO dto) {
         Shipment shipment = shipmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Shipment not found with ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Shipment not found with id: " + id));
 
         shipment.setTrackingNumber(dto.getTrackingNumber());
         shipment.setCarrier(dto.getCarrier());
         shipment.setShippedDate(dto.getShippedDate());
         shipment.setDeliveredDate(dto.getDeliveredDate());
         shipment.setStatus(dto.getStatus());
+
         shipment.setUpdatedAt(LocalDateTime.now());
         shipment.setUpdatedBy(dto.getUpdatedBy());
 
         if (dto.getOrderId() != null) {
             Order order = orderRepository.findById(dto.getOrderId())
-                    .orElseThrow(() -> new RuntimeException("Order not found with ID: " + dto.getOrderId()));
+                    .orElseThrow(() -> new EntityNotFoundException("Order not found with id: " + dto.getOrderId()));
             shipment.setOrder(order);
         }
 
-        return mapToResDTO(shipmentRepository.save(shipment));
+        Shipment updated = shipmentRepository.save(shipment);
+        return mapToDTO(updated);
     }
 
     @Override
     public void deleteShipment(Long id) {
-        shipmentRepository.deleteById(id);
-    }
-
-    @Override
-    public ResShipmentDTO getShipmentById(Long id) {
-        return shipmentRepository.findById(id)
-                .map(this::mapToResDTO)
-                .orElseThrow(() -> new RuntimeException("Shipment not found with ID: " + id));
+        Shipment shipment = shipmentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Shipment not found with id: " + id));
+        shipmentRepository.delete(shipment);
     }
 
     @Override
     public List<ResShipmentDTO> getAllShipments() {
-        return shipmentRepository.findAll()
-                .stream()
-                .map(this::mapToResDTO)
+        return shipmentRepository.findAll().stream()
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
-    private ResShipmentDTO mapToResDTO(Shipment shipment) {
-        return new ResShipmentDTO(
-                shipment.getId(),
-                shipment.getTrackingNumber(),
-                shipment.getCarrier(),
-                shipment.getShippedDate(),
-                shipment.getDeliveredDate(),
-                shipment.getOrder(),
-                shipment.getStatus(),
-                shipment.getCreatedAt(),
-                shipment.getUpdatedAt(),
-                shipment.getCreatedBy(),
-                shipment.getUpdatedBy());
+    private ResShipmentDTO mapToDTO(Shipment shipment) {
+        return ResShipmentDTO.builder()
+                .id(shipment.getId())
+                .trackingNumber(shipment.getTrackingNumber())
+                .carrier(shipment.getCarrier())
+                .shippedDate(shipment.getShippedDate())
+                .deliveredDate(shipment.getDeliveredDate())
+                .status(shipment.getStatus())
+                .createdAt(shipment.getCreatedAt())
+                .updatedAt(shipment.getUpdatedAt())
+                .createdBy(shipment.getCreatedBy())
+                .updatedBy(shipment.getUpdatedBy())
+                .orderId(shipment.getOrder() != null ? shipment.getOrder().getId() : null)
+                .build();
     }
 }

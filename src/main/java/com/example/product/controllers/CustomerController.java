@@ -1,39 +1,40 @@
 package com.example.product.controllers;
 
-import com.example.product.models.request.ReqCustomerDTO;
-import com.example.product.models.response.ResCustomerDTO;
+import com.example.product.models.request.users.ReqCustomerDTO;
+import com.example.product.models.response.users.ResCustomerDTO;
 import com.example.product.services.customers.CustomerService;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/customers")
+@RequestMapping("/api/v1/customers")
+@RequiredArgsConstructor
 public class CustomerController {
 
-    @Autowired
-    private CustomerService customerService;
+    private final CustomerService customerService;
+    private final PasswordEncoder passwordEncoder;
 
     @PostMapping
-    public ResponseEntity<ResCustomerDTO> createCustomer(@RequestBody ReqCustomerDTO dto) {
-        ResCustomerDTO createdCustomer = customerService.createCustomer(dto);
-        return ResponseEntity.ok(createdCustomer);
+    public ResponseEntity<ResCustomerDTO> createCustomer(@Valid @RequestBody ReqCustomerDTO reqCustomerDTO) {
+        String hashPassword = this.passwordEncoder.encode(reqCustomerDTO.getPassword());
+        reqCustomerDTO.setPassword(hashPassword);
+        ResCustomerDTO created = customerService.createCustomer(reqCustomerDTO);
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResCustomerDTO> updateCustomer(@PathVariable Long id,
-            @RequestBody ReqCustomerDTO dto) {
-        ResCustomerDTO updatedCustomer = customerService.updateCustomer(id, dto);
-        return ResponseEntity.ok(updatedCustomer);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
-        customerService.deleteCustomer(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ResCustomerDTO> updateCustomer(
+            @PathVariable Long id,
+            @Valid @RequestBody ReqCustomerDTO reqCustomerDTO) {
+        ResCustomerDTO updated = customerService.updateCustomer(id, reqCustomerDTO);
+        return ResponseEntity.ok(updated);
     }
 
     @GetMapping("/{id}")
@@ -46,5 +47,11 @@ public class CustomerController {
     public ResponseEntity<List<ResCustomerDTO>> getAllCustomers() {
         List<ResCustomerDTO> customers = customerService.getAllCustomers();
         return ResponseEntity.ok(customers);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
+        customerService.deleteCustomer(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,11 +1,14 @@
 package com.example.product.services.categories;
 
-import com.example.product.entities.Category;
-import com.example.product.models.request.ReqCategoryDTO;
-import com.example.product.models.response.ResCategoryDTO;
+import com.example.product.entities.products.Category;
+import com.example.product.entities.products.Product;
+import com.example.product.models.request.products.ReqCategoryDTO;
+import com.example.product.models.response.products.ResCategoryDTO;
 import com.example.product.repositories.CategoryRepository;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -13,65 +16,74 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
 
-    @Autowired
-    private CategoryRepository categoryRepository;
+    private final CategoryRepository categoryRepository;
 
     @Override
-    public ResCategoryDTO createCategory(ReqCategoryDTO dto) {
+    public ResCategoryDTO createCategory(ReqCategoryDTO reqCategoryDTO) {
         Category category = new Category();
-        category.setName(dto.getName());
-        category.setDescription(dto.getDescription());
-        category.setCreatedAt(dto.getCreatedAt() != null ? dto.getCreatedAt() : LocalDateTime.now());
-        category.setUpdatedAt(dto.getUpdatedAt() != null ? dto.getUpdatedAt() : LocalDateTime.now());
-        category.setCreatedBy(dto.getCreatedBy());
-        category.setUpdatedBy(dto.getUpdatedBy());
-
-        return mapToResDTO(categoryRepository.save(category));
-    }
-
-    @Override
-    public ResCategoryDTO updateCategory(Long id, ReqCategoryDTO dto) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found with ID: " + id));
-
-        category.setName(dto.getName());
-        category.setDescription(dto.getDescription());
+        BeanUtils.copyProperties(reqCategoryDTO, category);
+        category.setCreatedAt(LocalDateTime.now());
         category.setUpdatedAt(LocalDateTime.now());
-        category.setUpdatedBy(dto.getUpdatedBy());
 
-        return mapToResDTO(categoryRepository.save(category));
+        Category savedCategory = categoryRepository.save(category);
+        return mapToDTO(savedCategory);
     }
 
     @Override
-    public void deleteCategory(Long id) {
-        categoryRepository.deleteById(id);
+    public ResCategoryDTO updateCategory(Long categoryId, ReqCategoryDTO reqCategoryDTO) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new EntityNotFoundException("Category not found with ID: " + categoryId));
+
+        category.setName(reqCategoryDTO.getName());
+        category.setDescription(reqCategoryDTO.getDescription());
+        category.setUpdatedBy(reqCategoryDTO.getUpdatedBy());
+        category.setUpdatedAt(LocalDateTime.now());
+
+        Category updatedCategory = categoryRepository.save(category);
+        return mapToDTO(updatedCategory);
     }
 
     @Override
-    public ResCategoryDTO getCategoryById(Long id) {
-        return categoryRepository.findById(id)
-                .map(this::mapToResDTO)
-                .orElseThrow(() -> new RuntimeException("Category not found with ID: " + id));
+    public void deleteCategory(Long categoryId) {
+        if (!categoryRepository.existsById(categoryId)) {
+            throw new EntityNotFoundException("Category not found with ID: " + categoryId);
+        }
+        categoryRepository.deleteById(categoryId);
+    }
+
+    @Override
+    public ResCategoryDTO getCategoryById(Long categoryId) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new EntityNotFoundException("Category not found with ID: " + categoryId));
+        return mapToDTO(category);
     }
 
     @Override
     public List<ResCategoryDTO> getAllCategories() {
-        return categoryRepository.findAll()
-                .stream()
-                .map(this::mapToResDTO)
+        return categoryRepository.findAll().stream()
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
-    private ResCategoryDTO mapToResDTO(Category category) {
-        return new ResCategoryDTO(
-                category.getId(),
-                category.getName(),
-                category.getDescription(),
-                category.getCreatedAt(),
-                category.getUpdatedAt(),
-                category.getCreatedBy(),
-                category.getUpdatedBy());
+    private ResCategoryDTO mapToDTO(Category category) {
+        List<Long> productIds = category.getProducts() != null
+                ? category.getProducts().stream()
+                        .map(Product::getId)
+                        .collect(Collectors.toList())
+                : List.of();
+
+        return ResCategoryDTO.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .description(category.getDescription())
+                .createdAt(category.getCreatedAt())
+                .updatedAt(category.getUpdatedAt())
+                .createdBy(category.getCreatedBy())
+                .updatedBy(category.getUpdatedBy())
+                .productIds(productIds)
+                .build();
     }
 }

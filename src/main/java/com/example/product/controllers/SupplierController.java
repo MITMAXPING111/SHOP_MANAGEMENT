@@ -1,21 +1,21 @@
 package com.example.product.controllers;
 
-import com.example.product.models.request.ReqSupplierDTO;
-import com.example.product.models.response.ResSupplierDTO;
+import com.example.product.models.request.managers.ReqSupplierDTO;
+import com.example.product.models.response.managers.ResSupplierDTO;
 import com.example.product.services.suppliers.SupplierService;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/suppliers")
+@RequestMapping("/api/v1/suppliers")
+@RequiredArgsConstructor
 public class SupplierController {
 
-    @Autowired
-    private SupplierService supplierService;
+    private final SupplierService supplierService;
 
     @PostMapping
     public ResponseEntity<ResSupplierDTO> createSupplier(@RequestBody ReqSupplierDTO dto) {
@@ -24,7 +24,8 @@ public class SupplierController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResSupplierDTO> updateSupplier(@PathVariable Long id,
+    public ResponseEntity<ResSupplierDTO> updateSupplier(
+            @PathVariable Long id,
             @RequestBody ReqSupplierDTO dto) {
         ResSupplierDTO updatedSupplier = supplierService.updateSupplier(id, dto);
         return ResponseEntity.ok(updatedSupplier);

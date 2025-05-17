@@ -1,0 +1,19 @@
+package com.example.product.models.response.users.permissions;
+
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+
+import com.example.product.constants.PermissionEnum;
+
+@Getter
+@Setter
+public class ResPermission {
+    private Long id;
+    private PermissionEnum name;
+    private String createBy;
+    private LocalDateTime createAt;
+    private String updateBy;
+    private LocalDateTime updateAt;
+}

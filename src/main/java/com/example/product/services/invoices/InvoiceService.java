@@ -1,14 +1,14 @@
 package com.example.product.services.invoices;
 
+import com.example.product.models.request.managers.ReqInvoiceDTO;
+import com.example.product.models.response.managers.ResInvoiceDTO;
+
 import java.util.List;
 
-import com.example.product.models.request.ReqInvoiceDTO;
-import com.example.product.models.response.ResInvoiceDTO;
-
 public interface InvoiceService {
-    ResInvoiceDTO createInvoice(ReqInvoiceDTO dto);
+    ResInvoiceDTO createInvoice(ReqInvoiceDTO reqInvoiceDTO);
 
-    ResInvoiceDTO updateInvoice(Long id, ReqInvoiceDTO dto);
+    ResInvoiceDTO updateInvoice(Long id, ReqInvoiceDTO reqInvoiceDTO);
 
     void deleteInvoice(Long id);
 

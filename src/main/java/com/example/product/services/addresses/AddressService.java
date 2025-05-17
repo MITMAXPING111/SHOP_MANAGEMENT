@@ -1,9 +1,9 @@
-package com.example.product.services.address;
+package com.example.product.services.addresses;
+
+import com.example.product.models.request.users.ReqAddressDTO;
+import com.example.product.models.response.users.ResAddressDTO;
 
 import java.util.List;
-
-import com.example.product.models.request.ReqAddressDTO;
-import com.example.product.models.response.ResAddressDTO;
 
 public interface AddressService {
     ResAddressDTO createAddress(ReqAddressDTO dto);

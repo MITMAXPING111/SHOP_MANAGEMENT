@@ -1,18 +1,18 @@
 package com.example.product.services.categories;
 
+import com.example.product.models.request.products.ReqCategoryDTO;
+import com.example.product.models.response.products.ResCategoryDTO;
+
 import java.util.List;
 
-import com.example.product.models.request.ReqCategoryDTO;
-import com.example.product.models.response.ResCategoryDTO;
-
 public interface CategoryService {
-    ResCategoryDTO createCategory(ReqCategoryDTO dto);
+    ResCategoryDTO createCategory(ReqCategoryDTO reqCategoryDTO);
 
-    ResCategoryDTO updateCategory(Long id, ReqCategoryDTO dto);
+    ResCategoryDTO updateCategory(Long categoryId, ReqCategoryDTO reqCategoryDTO);
 
-    void deleteCategory(Long id);
+    void deleteCategory(Long categoryId);
 
-    ResCategoryDTO getCategoryById(Long id);
+    ResCategoryDTO getCategoryById(Long categoryId);
 
     List<ResCategoryDTO> getAllCategories();
 }

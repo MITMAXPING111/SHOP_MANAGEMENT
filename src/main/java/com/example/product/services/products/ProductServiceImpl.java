@@ -1,15 +1,14 @@
 package com.example.product.services.products;
 
-import com.example.product.entities.Category;
-import com.example.product.entities.Product;
-import com.example.product.entities.Supplier;
-import com.example.product.models.request.ReqProductDTO;
-import com.example.product.models.response.ResProductDTO;
+import com.example.product.entities.managers.Supplier;
+import com.example.product.entities.products.Category;
+import com.example.product.entities.products.Product;
+import com.example.product.models.request.products.ReqProductDTO;
+import com.example.product.models.response.products.ResProductDTO;
 import com.example.product.repositories.CategoryRepository;
 import com.example.product.repositories.ProductRepository;
 import com.example.product.repositories.SupplierRepository;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -17,93 +16,139 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private CategoryRepository categoryRepository;
-
-    @Autowired
-    private SupplierRepository supplierRepository;
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final SupplierRepository supplierRepository;
 
     @Override
-    public ResProductDTO createProduct(ReqProductDTO dto) {
-        Product product = mapToEntity(dto);
+    public ResProductDTO createProduct(ReqProductDTO req) {
+        Product product = mapToEntity(req);
+        product.setCreatedBy(req.getCreatedBy());
         product.setCreatedAt(LocalDateTime.now());
-        product.setCreatedBy(dto.getCreatedBy());
-        Product saved = productRepository.save(product);
-        return mapToResDTO(saved);
+        productRepository.save(product);
+        return mapToDTO(product);
     }
 
     @Override
-    public ResProductDTO updateProduct(Long id, ReqProductDTO dto) {
+    public ResProductDTO updateProduct(Long id, ReqProductDTO req) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with ID: " + id));
-        product.setName(dto.getName());
-        product.setDescription(dto.getDescription());
-        product.setPrice(dto.getPrice());
-        product.setStockQuantity(dto.getStockQuantity());
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+
+        product.setName(req.getName());
+        product.setDescription(req.getDescription());
+        product.setPrice(req.getPrice());
+        product.setStockQuantity(req.getStockQuantity());
+        product.setSku(req.getSku());
+        product.setActive(req.getActive());
         product.setUpdatedAt(LocalDateTime.now());
-        product.setSku(dto.getSku());
-        product.setUpdatedBy(dto.getUpdatedBy());
+        product.setUpdatedBy(req.getUpdatedBy());
 
-        return mapToResDTO(productRepository.save(product));
-    }
+        if (req.getCategoryId() != null) {
+            Category category = categoryRepository.findById(req.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found with id: " + req.getCategoryId()));
+            product.setCategory(category);
+        }
 
-    @Override
-    public void deleteProduct(Long id) {
-        productRepository.deleteById(id);
+        if (req.getSupplierId() != null) {
+            Supplier supplier = supplierRepository.findById(req.getSupplierId())
+                    .orElseThrow(() -> new RuntimeException("Supplier not found with id: " + req.getSupplierId()));
+            product.setSupplier(supplier);
+        }
+
+        productRepository.save(product);
+        return mapToDTO(product);
     }
 
     @Override
     public ResProductDTO getProductById(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with ID: " + id));
-        return mapToResDTO(product);
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+        return mapToDTO(product);
+    }
+
+    @Override
+    public void deleteProduct(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+        product.setActive(false); // Soft delete
+        productRepository.save(product);
     }
 
     @Override
     public List<ResProductDTO> getAllProducts() {
         return productRepository.findAll()
                 .stream()
-                .map(this::mapToResDTO)
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
-    private Product mapToEntity(ReqProductDTO dto) {
+    // Helper: Convert DTO to Entity
+    private Product mapToEntity(ReqProductDTO req) {
         Product product = new Product();
-        product.setName(dto.getName());
-        product.setDescription(dto.getDescription());
-        product.setPrice(dto.getPrice());
-        // Có thể ánh xạ thêm category, supplier nếu cần
-        // Ánh xạ category
-        if (dto.getCategoryId() != null) {
-            Category category = categoryRepository.findById(dto.getCategoryId())
-                    .orElseThrow(() -> new RuntimeException("Category not found with ID: " + dto.getCategoryId()));
+        product.setName(req.getName());
+        product.setDescription(req.getDescription());
+        product.setPrice(req.getPrice());
+        product.setStockQuantity(req.getStockQuantity());
+        product.setSku(req.getSku());
+        product.setActive(req.getActive());
+        product.setCreatedAt(req.getCreatedAt());
+        product.setCreatedBy(req.getCreatedBy());
+        product.setUpdatedAt(req.getUpdatedAt());
+        product.setUpdatedBy(req.getUpdatedBy());
+
+        if (req.getCategoryId() != null) {
+            Category category = categoryRepository.findById(req.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found with id: " + req.getCategoryId()));
             product.setCategory(category);
         }
 
-        // Ánh xạ supplier
-        if (dto.getSupplierId() != null) {
-            Supplier supplier = supplierRepository.findById(dto.getSupplierId())
-                    .orElseThrow(() -> new RuntimeException("Supplier not found with ID: " + dto.getSupplierId()));
+        if (req.getSupplierId() != null) {
+            Supplier supplier = supplierRepository.findById(req.getSupplierId())
+                    .orElseThrow(() -> new RuntimeException("Supplier not found with id: " + req.getSupplierId()));
             product.setSupplier(supplier);
         }
+
         return product;
     }
 
-    private ResProductDTO mapToResDTO(Product product) {
-        ResProductDTO dto = new ResProductDTO();
-        dto.setId(product.getId());
-        dto.setName(product.getName());
-        dto.setDescription(product.getDescription());
-        dto.setPrice(product.getPrice());
-        dto.setCreatedAt(product.getCreatedAt());
-        dto.setUpdatedAt(product.getUpdatedAt());
-        dto.setCreatedBy(product.getCreatedBy());
-        dto.setUpdatedBy(product.getUpdatedBy());
-        return dto;
+    // Helper: Convert Entity to DTO
+    private ResProductDTO mapToDTO(Product product) {
+        return ResProductDTO.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .stockQuantity(product.getStockQuantity())
+                .sku(product.getSku())
+                .active(product.getActive())
+                .createdAt(product.getCreatedAt())
+                .updatedAt(product.getUpdatedAt())
+                .createdBy(product.getCreatedBy())
+                .updatedBy(product.getUpdatedBy())
+
+                // Chỉ lấy id và name của category nếu không có DTO riêng
+                .category(product.getCategory() != null
+                        ? Category.builder()
+                                .id(product.getCategory().getId())
+                                .name(product.getCategory().getName())
+                                .build()
+                        : null)
+
+                // Chỉ lấy id và name của supplier nếu không có DTO riêng
+                .supplier(product.getSupplier() != null
+                        ? Supplier.builder()
+                                .id(product.getSupplier().getId())
+                                .name(product.getSupplier().getName())
+                                .build()
+                        : null)
+
+                // KHÔNG LẤY productVariants và reviews để tránh vòng lặp
+                .productVariants(null)
+                .reviews(null)
+
+                .build();
     }
 }

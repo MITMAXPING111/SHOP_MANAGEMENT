@@ -1,33 +1,32 @@
 package com.example.product.controllers;
 
-import com.example.product.models.request.ReqAddressDTO;
-import com.example.product.models.response.ResAddressDTO;
-import com.example.product.services.address.AddressService;
+import com.example.product.models.request.users.ReqAddressDTO;
+import com.example.product.models.response.users.ResAddressDTO;
+import com.example.product.services.addresses.AddressService;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/addresses")
+@RequestMapping("/api/v1/addresses")
+@RequiredArgsConstructor
 public class AddressController {
 
-    @Autowired
-    private AddressService addressService;
+    private final AddressService addressService;
 
     @PostMapping
     public ResponseEntity<ResAddressDTO> createAddress(@RequestBody ReqAddressDTO dto) {
-        ResAddressDTO createdAddress = addressService.createAddress(dto);
-        return ResponseEntity.ok(createdAddress);
+        ResAddressDTO result = addressService.createAddress(dto);
+        return ResponseEntity.ok(result);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResAddressDTO> updateAddress(@PathVariable Long id,
-            @RequestBody ReqAddressDTO dto) {
-        ResAddressDTO updatedAddress = addressService.updateAddress(id, dto);
-        return ResponseEntity.ok(updatedAddress);
+    public ResponseEntity<ResAddressDTO> updateAddress(@PathVariable Long id, @RequestBody ReqAddressDTO dto) {
+        ResAddressDTO result = addressService.updateAddress(id, dto);
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/{id}")
@@ -38,13 +37,13 @@ public class AddressController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ResAddressDTO> getAddressById(@PathVariable Long id) {
-        ResAddressDTO address = addressService.getAddressById(id);
-        return ResponseEntity.ok(address);
+        ResAddressDTO result = addressService.getAddressById(id);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping
     public ResponseEntity<List<ResAddressDTO>> getAllAddresses() {
-        List<ResAddressDTO> addresses = addressService.getAllAddresses();
-        return ResponseEntity.ok(addresses);
+        List<ResAddressDTO> results = addressService.getAllAddresses();
+        return ResponseEntity.ok(results);
     }
 }

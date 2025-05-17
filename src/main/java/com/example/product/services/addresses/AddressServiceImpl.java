@@ -1,103 +1,93 @@
-package com.example.product.services.address;
+package com.example.product.services.addresses;
 
-import com.example.product.entities.Address;
-import com.example.product.entities.Customer;
-import com.example.product.models.request.ReqAddressDTO;
-import com.example.product.models.response.ResAddressDTO;
+import com.example.product.entities.users.Address;
+import com.example.product.models.request.users.ReqAddressDTO;
+import com.example.product.models.response.users.ResAddressDTO;
 import com.example.product.repositories.AddressRepository;
-import com.example.product.repositories.CustomerRepository;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class AddressServiceImpl implements AddressService {
 
-    @Autowired
-    private AddressRepository addressRepository;
-
-    @Autowired
-    private CustomerRepository customerRepository;
+    private final AddressRepository addressRepository;
 
     @Override
     public ResAddressDTO createAddress(ReqAddressDTO dto) {
-        Customer customer = customerRepository.findById(dto.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Customer not found with ID: " + dto.getCustomerId()));
-
         Address address = new Address();
-        address.setStreet(dto.getStreet());
-        address.setCity(dto.getCity());
-        address.setState(dto.getState());
-        address.setZipCode(dto.getZipCode());
-        address.setCountry(dto.getCountry());
-        address.setCustomer(customer);
+        address.setProvince(dto.getProvince());
+        address.setWard(dto.getWard());
+        address.setAddressDetail(dto.getAddressDetail());
         address.setType(dto.getType());
-        address.setCreatedAt(dto.getCreatedAt() != null ? dto.getCreatedAt() : LocalDateTime.now());
-        address.setUpdatedAt(dto.getUpdatedAt() != null ? dto.getUpdatedAt() : LocalDateTime.now());
-        address.setCreatedBy(dto.getCreatedBy());
-        address.setUpdatedBy(dto.getUpdatedBy());
 
-        return mapToResDTO(addressRepository.save(address));
+        address.setCreatedBy(dto.getCreatedBy());
+        address.setCreatedAt(LocalDateTime.now());
+
+        Address saved = addressRepository.save(address);
+        return mapToDTO(saved);
     }
 
     @Override
     public ResAddressDTO updateAddress(Long id, ReqAddressDTO dto) {
-        Address address = addressRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Address not found with ID: " + id));
+        Optional<Address> optional = addressRepository.findById(id);
+        if (optional.isEmpty()) {
+            throw new RuntimeException("Address not found with id: " + id);
+        }
 
-        Customer customer = customerRepository.findById(dto.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Customer not found with ID: " + dto.getCustomerId()));
-
-        address.setStreet(dto.getStreet());
-        address.setCity(dto.getCity());
-        address.setState(dto.getState());
-        address.setZipCode(dto.getZipCode());
-        address.setCountry(dto.getCountry());
-        address.setCustomer(customer);
+        Address address = optional.get();
+        address.setProvince(dto.getProvince());
+        address.setWard(dto.getWard());
+        address.setAddressDetail(dto.getAddressDetail());
         address.setType(dto.getType());
-        address.setUpdatedAt(LocalDateTime.now());
-        address.setUpdatedBy(dto.getUpdatedBy());
 
-        return mapToResDTO(addressRepository.save(address));
+        // Cập nhật metadata
+        address.setUpdatedBy(dto.getUpdatedBy());
+        address.setUpdatedAt(LocalDateTime.now());
+
+        Address updated = addressRepository.save(address);
+        return mapToDTO(updated);
     }
 
     @Override
     public void deleteAddress(Long id) {
+        if (!addressRepository.existsById(id)) {
+            throw new RuntimeException("Address not found with id: " + id);
+        }
         addressRepository.deleteById(id);
     }
 
     @Override
     public ResAddressDTO getAddressById(Long id) {
-        return addressRepository.findById(id)
-                .map(this::mapToResDTO)
-                .orElseThrow(() -> new RuntimeException("Address not found with ID: " + id));
+        Address address = addressRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Address not found with id: " + id));
+        return mapToDTO(address);
     }
 
     @Override
     public List<ResAddressDTO> getAllAddresses() {
         return addressRepository.findAll()
                 .stream()
-                .map(this::mapToResDTO)
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
-    private ResAddressDTO mapToResDTO(Address address) {
+    private ResAddressDTO mapToDTO(Address address) {
         return new ResAddressDTO(
                 address.getId(),
-                address.getStreet(),
-                address.getCity(),
-                address.getState(),
-                address.getZipCode(),
-                address.getCountry(),
-                address.getCustomer() != null ? address.getCustomer().getId() : null,
+                address.getProvince(),
+                address.getWard(),
+                address.getAddressDetail(),
                 address.getType(),
-                address.getCreatedAt(),
-                address.getUpdatedAt(),
                 address.getCreatedBy(),
-                address.getUpdatedBy());
+                address.getCreatedAt(),
+                address.getUpdatedBy(),
+                address.getUpdatedAt());
     }
 }

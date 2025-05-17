@@ -1,32 +1,36 @@
 package com.example.product.controllers;
 
-import com.example.product.models.request.ReqUserDTO;
-import com.example.product.models.response.ResUserDTO;
+import com.example.product.models.request.users.ReqUserDTO;
+import com.example.product.models.response.users.ResUserDTO;
 import com.example.product.services.users.UserService;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+    private final PasswordEncoder passwordEncoder;
 
     @PostMapping
-    public ResponseEntity<ResUserDTO> createUser(@RequestBody ReqUserDTO dto) {
-        ResUserDTO createdUser = userService.createUser(dto);
+    public ResponseEntity<ResUserDTO> createUser(@Valid @RequestBody ReqUserDTO reqUserDTO) {
+        String hashPassword = this.passwordEncoder.encode(reqUserDTO.getPassword());
+        reqUserDTO.setPassword(hashPassword);
+        ResUserDTO createdUser = userService.createUser(reqUserDTO);
         return ResponseEntity.ok(createdUser);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResUserDTO> updateUser(@PathVariable Long id,
-            @RequestBody ReqUserDTO dto) {
-        ResUserDTO updatedUser = userService.updateUser(id, dto);
+    public ResponseEntity<ResUserDTO> updateUser(@PathVariable Long id, @Valid @RequestBody ReqUserDTO reqUserDTO) {
+        ResUserDTO updatedUser = userService.updateUser(id, reqUserDTO);
         return ResponseEntity.ok(updatedUser);
     }
 

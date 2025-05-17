@@ -1,13 +1,14 @@
 package com.example.product.services.invoices;
 
-import com.example.product.entities.Invoice;
-import com.example.product.entities.Order;
-import com.example.product.models.request.ReqInvoiceDTO;
-import com.example.product.models.response.ResInvoiceDTO;
+import com.example.product.entities.managers.Invoice;
+import com.example.product.entities.products.Order;
+import com.example.product.models.request.managers.ReqInvoiceDTO;
+import com.example.product.models.response.managers.ResInvoiceDTO;
 import com.example.product.repositories.InvoiceRepository;
 import com.example.product.repositories.OrderRepository;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,91 +16,93 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class InvoiceServiceImpl implements InvoiceService {
 
-    @Autowired
-    private InvoiceRepository invoiceRepository;
-
-    @Autowired
-    private OrderRepository orderRepository;
+    private final InvoiceRepository invoiceRepository;
+    private final OrderRepository orderRepository;
 
     @Override
-    public ResInvoiceDTO createInvoice(ReqInvoiceDTO dto) {
-        Invoice invoice = new Invoice();
-        invoice.setInvoiceNumber(dto.getInvoiceNumber());
-        invoice.setIssuedDate(dto.getIssuedDate());
-        invoice.setTotalAmount(dto.getTotalAmount());
-        invoice.setVat(dto.getVat());
-        invoice.setDiscount(dto.getDiscount());
-        invoice.setPaymentMethod(dto.getPaymentMethod());
-        invoice.setCreatedAt(dto.getCreatedAt() != null ? dto.getCreatedAt() : LocalDateTime.now());
-        invoice.setUpdatedAt(dto.getUpdatedAt() != null ? dto.getUpdatedAt() : LocalDateTime.now());
-        invoice.setCreatedBy(dto.getCreatedBy());
-        invoice.setUpdatedBy(dto.getUpdatedBy());
+    public ResInvoiceDTO createInvoice(ReqInvoiceDTO req) {
+        Order order = orderRepository.findById(req.getOrderId())
+                .orElseThrow(() -> new EntityNotFoundException("Order not found with ID: " + req.getOrderId()));
 
-        Order order = orderRepository.findById(dto.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + dto.getOrderId()));
+        Invoice invoice = new Invoice();
+        invoice.setInvoiceNumber(req.getInvoiceNumber());
+        invoice.setIssuedDate(req.getIssuedDate());
+        invoice.setTotalAmount(req.getTotalAmount());
+        invoice.setVat(req.getVat() != null ? req.getVat() : new java.math.BigDecimal("10"));
+        invoice.setDiscount(req.getDiscount());
+        invoice.setPaymentMethod(req.getPaymentMethod());
+        invoice.setCreatedBy(req.getCreatedBy());
+        invoice.setCreatedAt(LocalDateTime.now());
         invoice.setOrder(order);
 
-        return mapToResDTO(invoiceRepository.save(invoice));
+        Invoice saved = invoiceRepository.save(invoice);
+        return mapToDTO(saved);
     }
 
     @Override
-    public ResInvoiceDTO updateInvoice(Long id, ReqInvoiceDTO dto) {
+    public ResInvoiceDTO updateInvoice(Long id, ReqInvoiceDTO req) {
         Invoice invoice = invoiceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Invoice not found with ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Invoice not found with ID: " + id));
 
-        invoice.setInvoiceNumber(dto.getInvoiceNumber());
-        invoice.setIssuedDate(dto.getIssuedDate());
-        invoice.setTotalAmount(dto.getTotalAmount());
-        invoice.setVat(dto.getVat());
-        invoice.setDiscount(dto.getDiscount());
-        invoice.setPaymentMethod(dto.getPaymentMethod());
-        invoice.setUpdatedAt(LocalDateTime.now());
-        invoice.setUpdatedBy(dto.getUpdatedBy());
-
-        if (dto.getOrderId() != null) {
-            Order order = orderRepository.findById(dto.getOrderId())
-                    .orElseThrow(() -> new RuntimeException("Order not found with ID: " + dto.getOrderId()));
+        if (req.getOrderId() != null) {
+            Order order = orderRepository.findById(req.getOrderId())
+                    .orElseThrow(() -> new EntityNotFoundException("Order not found with ID: " + req.getOrderId()));
             invoice.setOrder(order);
         }
 
-        return mapToResDTO(invoiceRepository.save(invoice));
+        invoice.setInvoiceNumber(req.getInvoiceNumber());
+        invoice.setIssuedDate(req.getIssuedDate());
+        invoice.setTotalAmount(req.getTotalAmount());
+        invoice.setVat(req.getVat());
+        invoice.setDiscount(req.getDiscount());
+        invoice.setPaymentMethod(req.getPaymentMethod());
+        invoice.setUpdatedBy(req.getUpdatedBy());
+        invoice.setUpdatedAt(LocalDateTime.now());
+
+        Invoice updated = invoiceRepository.save(invoice);
+        return mapToDTO(updated);
     }
 
     @Override
     public void deleteInvoice(Long id) {
+        if (!invoiceRepository.existsById(id)) {
+            throw new EntityNotFoundException("Invoice not found with ID: " + id);
+        }
         invoiceRepository.deleteById(id);
     }
 
     @Override
     public ResInvoiceDTO getInvoiceById(Long id) {
-        return invoiceRepository.findById(id)
-                .map(this::mapToResDTO)
-                .orElseThrow(() -> new RuntimeException("Invoice not found with ID: " + id));
+        Invoice invoice = invoiceRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Invoice not found with ID: " + id));
+        return mapToDTO(invoice);
     }
 
     @Override
     public List<ResInvoiceDTO> getAllInvoices() {
         return invoiceRepository.findAll()
                 .stream()
-                .map(this::mapToResDTO)
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
-    private ResInvoiceDTO mapToResDTO(Invoice invoice) {
-        return new ResInvoiceDTO(
-                invoice.getId(),
-                invoice.getInvoiceNumber(),
-                invoice.getIssuedDate(),
-                invoice.getOrder(),
-                invoice.getTotalAmount(),
-                invoice.getVat(),
-                invoice.getDiscount(),
-                invoice.getPaymentMethod(),
-                invoice.getCreatedAt(),
-                invoice.getUpdatedAt(),
-                invoice.getCreatedBy(),
-                invoice.getUpdatedBy());
+    private ResInvoiceDTO mapToDTO(Invoice invoice) {
+        return ResInvoiceDTO.builder()
+                .id(invoice.getId())
+                .invoiceNumber(invoice.getInvoiceNumber())
+                .issuedDate(invoice.getIssuedDate())
+                .totalAmount(invoice.getTotalAmount())
+                .vat(invoice.getVat())
+                .discount(invoice.getDiscount())
+                .paymentMethod(invoice.getPaymentMethod())
+                .createdBy(invoice.getCreatedBy())
+                .createdAt(invoice.getCreatedAt())
+                .updatedBy(invoice.getUpdatedBy())
+                .updatedAt(invoice.getUpdatedAt())
+                .orderId(invoice.getOrder() != null ? invoice.getOrder().getId() : null)
+                .build();
     }
 }

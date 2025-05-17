@@ -1,33 +1,33 @@
 package com.example.product.controllers;
 
-import com.example.product.models.request.ReqOrderItemDTO;
-import com.example.product.models.response.ResOrderItemDTO;
+import com.example.product.models.request.products.ReqOrderItemDTO;
+import com.example.product.models.response.products.ResOrderItemDTO;
 import com.example.product.services.orderItem.OrderItemService;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/order-items")
+@RequestMapping("/api/v1/order-items")
+@RequiredArgsConstructor
 public class OrderItemController {
 
-    @Autowired
-    private OrderItemService orderItemService;
+    private final OrderItemService orderItemService;
 
     @PostMapping
-    public ResponseEntity<ResOrderItemDTO> createOrderItem(@RequestBody ReqOrderItemDTO dto) {
-        ResOrderItemDTO createdItem = orderItemService.createOrderItem(dto);
-        return ResponseEntity.ok(createdItem);
+    public ResponseEntity<ResOrderItemDTO> createOrderItem(@RequestBody ReqOrderItemDTO request) {
+        ResOrderItemDTO created = orderItemService.createOrderItem(request);
+        return ResponseEntity.ok(created);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ResOrderItemDTO> updateOrderItem(@PathVariable Long id,
-            @RequestBody ReqOrderItemDTO dto) {
-        ResOrderItemDTO updatedItem = orderItemService.updateOrderItem(id, dto);
-        return ResponseEntity.ok(updatedItem);
+            @RequestBody ReqOrderItemDTO request) {
+        ResOrderItemDTO updated = orderItemService.updateOrderItem(id, request);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
@@ -38,8 +38,8 @@ public class OrderItemController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ResOrderItemDTO> getOrderItemById(@PathVariable Long id) {
-        ResOrderItemDTO item = orderItemService.getOrderItemById(id);
-        return ResponseEntity.ok(item);
+        ResOrderItemDTO response = orderItemService.getOrderItemById(id);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping

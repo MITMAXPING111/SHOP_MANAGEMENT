@@ -1,18 +1,19 @@
 package com.example.product.services.inventories;
 
+import com.example.product.exceptions.errors.IdInvalidException;
+import com.example.product.models.request.managers.ReqInventoryDTO;
+import com.example.product.models.response.managers.ResInventoryDTO;
+
 import java.util.List;
 
-import com.example.product.models.request.ReqInventoryDTO;
-import com.example.product.models.response.ResInventoryDTO;
-
 public interface InventoryService {
-    ResInventoryDTO createInventory(ReqInventoryDTO dto);
+    ResInventoryDTO create(ReqInventoryDTO dto) throws IdInvalidException;
 
-    ResInventoryDTO updateInventory(Long id, ReqInventoryDTO dto);
+    ResInventoryDTO update(Long id, ReqInventoryDTO dto) throws IdInvalidException;
 
-    void deleteInventory(Long id);
+    void delete(Long id) throws IdInvalidException;
 
-    ResInventoryDTO getInventoryById(Long id);
+    ResInventoryDTO getById(Long id) throws IdInvalidException;
 
-    List<ResInventoryDTO> getAllInventories();
+    List<ResInventoryDTO> getAll() throws IdInvalidException;
 }

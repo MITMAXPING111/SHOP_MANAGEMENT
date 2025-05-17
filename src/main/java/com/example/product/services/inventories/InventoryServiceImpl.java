@@ -1,13 +1,13 @@
 package com.example.product.services.inventories;
 
-import com.example.product.entities.Inventory;
-import com.example.product.entities.Product;
-import com.example.product.models.request.ReqInventoryDTO;
-import com.example.product.models.response.ResInventoryDTO;
+import com.example.product.entities.managers.Inventory;
+import com.example.product.entities.products.ProductVariant;
+import com.example.product.exceptions.errors.IdInvalidException;
+import com.example.product.models.request.managers.ReqInventoryDTO;
+import com.example.product.models.response.managers.ResInventoryDTO;
 import com.example.product.repositories.InventoryRepository;
-import com.example.product.repositories.ProductRepository;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.product.repositories.ProductVariantRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,82 +15,83 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class InventoryServiceImpl implements InventoryService {
 
-    @Autowired
-    private InventoryRepository inventoryRepository;
-
-    @Autowired
-    private ProductRepository productRepository;
+    private final InventoryRepository inventoryRepository;
+    private final ProductVariantRepository productVariantRepository;
 
     @Override
-    public ResInventoryDTO createInventory(ReqInventoryDTO dto) {
+    public ResInventoryDTO create(ReqInventoryDTO dto) throws IdInvalidException {
         Inventory inventory = new Inventory();
         inventory.setQuantityInStock(dto.getQuantityInStock());
         inventory.setQuantityReserved(dto.getQuantityReserved());
         inventory.setQuantityAvailable(dto.getQuantityAvailable());
-        inventory.setCreatedAt(dto.getCreatedAt() != null ? dto.getCreatedAt() : LocalDateTime.now());
-        inventory.setUpdatedAt(dto.getUpdatedAt() != null ? dto.getUpdatedAt() : LocalDateTime.now());
+        inventory.setMinimumQuantityThreshold(dto.getMinimumQuantityThreshold());
+
         inventory.setCreatedBy(dto.getCreatedBy());
-        inventory.setUpdatedBy(dto.getUpdatedBy());
+        inventory.setCreatedAt(LocalDateTime.now());
 
-        Product product = productRepository.findById(dto.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found with ID: " + dto.getProductId()));
-        inventory.setProduct(product);
+        ProductVariant productVariant = productVariantRepository.findById(dto.getProductVariantId())
+                .orElseThrow(() -> new IdInvalidException(
+                        "ProductVariant not found with ID: " + dto.getProductVariantId()));
+        inventory.setProductVariant(productVariant);
 
-        return mapToResDTO(inventoryRepository.save(inventory));
+        Inventory saved = inventoryRepository.save(inventory);
+        return mapToDTO(saved);
     }
 
     @Override
-    public ResInventoryDTO updateInventory(Long id, ReqInventoryDTO dto) {
+    public ResInventoryDTO update(Long id, ReqInventoryDTO dto) throws IdInvalidException {
         Inventory inventory = inventoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Inventory not found with ID: " + id));
+                .orElseThrow(() -> new IdInvalidException("Inventory not found with ID: " + id));
 
         inventory.setQuantityInStock(dto.getQuantityInStock());
         inventory.setQuantityReserved(dto.getQuantityReserved());
         inventory.setQuantityAvailable(dto.getQuantityAvailable());
-        inventory.setUpdatedAt(LocalDateTime.now());
+        inventory.setMinimumQuantityThreshold(dto.getMinimumQuantityThreshold());
+
         inventory.setUpdatedBy(dto.getUpdatedBy());
+        inventory.setUpdatedAt(LocalDateTime.now());
 
-        if (dto.getProductId() != null) {
-            Product product = productRepository.findById(dto.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Product not found with ID: " + dto.getProductId()));
-            inventory.setProduct(product);
-        }
-
-        return mapToResDTO(inventoryRepository.save(inventory));
+        Inventory updated = inventoryRepository.save(inventory);
+        return mapToDTO(updated);
     }
 
     @Override
-    public void deleteInventory(Long id) {
-        inventoryRepository.deleteById(id);
+    public void delete(Long id) throws IdInvalidException {
+        Inventory inventory = inventoryRepository.findById(id)
+                .orElseThrow(() -> new IdInvalidException("Inventory not found with ID: " + id));
+        inventoryRepository.delete(inventory);
     }
 
     @Override
-    public ResInventoryDTO getInventoryById(Long id) {
-        return inventoryRepository.findById(id)
-                .map(this::mapToResDTO)
-                .orElseThrow(() -> new RuntimeException("Inventory not found with ID: " + id));
+    public ResInventoryDTO getById(Long id) throws IdInvalidException {
+        Inventory inventory = inventoryRepository.findById(id)
+                .orElseThrow(() -> new IdInvalidException("Inventory not found with ID: " + id));
+        return mapToDTO(inventory);
     }
 
     @Override
-    public List<ResInventoryDTO> getAllInventories() {
+    public List<ResInventoryDTO> getAll() {
         return inventoryRepository.findAll()
                 .stream()
-                .map(this::mapToResDTO)
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
-    private ResInventoryDTO mapToResDTO(Inventory inventory) {
-        return new ResInventoryDTO(
-                inventory.getId(),
-                inventory.getProduct(),
-                inventory.getQuantityInStock(),
-                inventory.getQuantityReserved(),
-                inventory.getQuantityAvailable(),
-                inventory.getCreatedAt(),
-                inventory.getUpdatedAt(),
-                inventory.getCreatedBy(),
-                inventory.getUpdatedBy());
+    private ResInventoryDTO mapToDTO(Inventory inventory) {
+        return ResInventoryDTO.builder()
+                .id(inventory.getId())
+                .quantityInStock(inventory.getQuantityInStock())
+                .quantityReserved(inventory.getQuantityReserved())
+                .quantityAvailable(inventory.getQuantityAvailable())
+                .minimumQuantityThreshold(inventory.getMinimumQuantityThreshold())
+                .createdAt(inventory.getCreatedAt())
+                .createdBy(inventory.getCreatedBy())
+                .updatedAt(inventory.getUpdatedAt())
+                .updatedBy(inventory.getUpdatedBy())
+                .productVariantId(inventory.getProductVariant() != null ? inventory.getProductVariant().getId() : null)
+                .build();
     }
 }

@@ -1,32 +1,32 @@
 package com.example.product.controllers;
 
-import com.example.product.models.request.ReqProductDTO;
-import com.example.product.models.response.ResProductDTO;
+import com.example.product.models.request.products.ReqProductDTO;
+import com.example.product.models.response.products.ResProductDTO;
 import com.example.product.services.products.ProductService;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/api/v1/products")
+@RequiredArgsConstructor
 public class ProductController {
 
-    @Autowired
-    private ProductService productService;
+    private final ProductService productService;
 
     @PostMapping
-    public ResponseEntity<ResProductDTO> createProduct(@RequestBody ReqProductDTO dto) {
-        ResProductDTO createdProduct = productService.createProduct(dto);
+    public ResponseEntity<ResProductDTO> createProduct(@RequestBody ReqProductDTO reqProductDTO) {
+        ResProductDTO createdProduct = productService.createProduct(reqProductDTO);
         return ResponseEntity.ok(createdProduct);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResProductDTO> updateProduct(@PathVariable Long id,
-            @RequestBody ReqProductDTO dto) {
-        ResProductDTO updatedProduct = productService.updateProduct(id, dto);
+    public ResponseEntity<ResProductDTO> updateProduct(
+            @PathVariable Long id,
+            @RequestBody ReqProductDTO reqProductDTO) {
+        ResProductDTO updatedProduct = productService.updateProduct(id, reqProductDTO);
         return ResponseEntity.ok(updatedProduct);
     }
 

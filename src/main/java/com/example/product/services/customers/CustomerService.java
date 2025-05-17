@@ -2,17 +2,18 @@ package com.example.product.services.customers;
 
 import java.util.List;
 
-import com.example.product.models.request.ReqCustomerDTO;
-import com.example.product.models.response.ResCustomerDTO;
+import com.example.product.models.request.users.ReqCustomerDTO;
+import com.example.product.models.response.users.ResCustomerDTO;
 
 public interface CustomerService {
-    ResCustomerDTO createCustomer(ReqCustomerDTO dto);
 
-    ResCustomerDTO updateCustomer(Long id, ReqCustomerDTO dto);
+    ResCustomerDTO createCustomer(ReqCustomerDTO reqCustomerDTO);
 
-    void deleteCustomer(Long id);
+    ResCustomerDTO updateCustomer(Long id, ReqCustomerDTO reqCustomerDTO);
 
     ResCustomerDTO getCustomerById(Long id);
 
     List<ResCustomerDTO> getAllCustomers();
+
+    void deleteCustomer(Long id);
 }
