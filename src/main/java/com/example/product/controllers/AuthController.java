@@ -5,6 +5,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.product.configs.CustomerDetailsImpl;
@@ -13,9 +14,11 @@ import com.example.product.configs.UserDetailsImpl;
 import com.example.product.entities.users.Customer;
 import com.example.product.entities.users.User;
 import com.example.product.models.request.auth.ReqAuthDTO;
+import com.example.product.models.request.email.ResetPasswordRequest;
 import com.example.product.models.response.auth.ResAuthDTO;
 import com.example.product.repositories.CustomerRepository;
 import com.example.product.repositories.UserRepository;
+import com.example.product.services.email.EmailService;
 import com.example.product.utils.JwtService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,6 +44,12 @@ public class AuthController {
 
         @Autowired
         private TokenBlacklistService tokenBlacklistService;
+
+        @Autowired
+        private EmailService emailService;
+
+        @Autowired
+        private PasswordEncoder passwordEncoder;
 
         @PostMapping("/login")
         public ResponseEntity<?> login(@RequestBody ReqAuthDTO request, HttpServletResponse response) {
@@ -288,5 +297,54 @@ public class AuthController {
                 response.addHeader("Set-Cookie", deleteCookie.toString());
 
                 return ResponseEntity.ok("Đăng xuất thành công (" + role + ")");
+        }
+
+        @PostMapping("/reset-password")
+        public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+                // Validate verification code
+                boolean isCodeValid = emailService.validateCode(request.getEmail(), request.getCode());
+                if (!isCodeValid) {
+                        return ResponseEntity.status(400).body("Mã xác nhận không hợp lệ hoặc đã hết hạn.");
+                }
+
+                // Find user by email
+                Optional<User> userOpt = userRepo.findByEmail(request.getEmail());
+                if (userOpt.isPresent()) {
+                        User user = userOpt.get();
+                        // Update password
+                        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+                        // Blacklist existing tokens
+                        if (user.getAccessToken() != null) {
+                                tokenBlacklistService.blacklistToken(user.getAccessToken());
+                        }
+                        if (user.getRefreshToken() != null) {
+                                tokenBlacklistService.blacklistToken(user.getRefreshToken());
+                        }
+                        user.setAccessToken(null);
+                        user.setRefreshToken(null);
+                        userRepo.save(user);
+                        return ResponseEntity.ok("Đổi mật khẩu thành công cho User.");
+                }
+
+                // Find customer by email
+                Optional<Customer> customerOpt = customerRepo.findByEmail(request.getEmail());
+                if (customerOpt.isPresent()) {
+                        Customer customer = customerOpt.get();
+                        // Update password
+                        customer.setPassword(passwordEncoder.encode(request.getNewPassword()));
+                        // Blacklist existing tokens
+                        if (customer.getCurrentAccessToken() != null) {
+                                tokenBlacklistService.blacklistToken(customer.getCurrentAccessToken());
+                        }
+                        if (customer.getCurrentRefreshToken() != null) {
+                                tokenBlacklistService.blacklistToken(customer.getCurrentRefreshToken());
+                        }
+                        customer.setCurrentAccessToken(null);
+                        customer.setCurrentRefreshToken(null);
+                        customerRepo.save(customer);
+                        return ResponseEntity.ok("Đổi mật khẩu thành công cho Customer.");
+                }
+
+                return ResponseEntity.status(404).body("Không tìm thấy tài khoản với email: " + request.getEmail());
         }
 }
