@@ -53,7 +53,7 @@ public class Customer {
     private String currentAccessToken;
 
     public String getCurrentAccessToken() {
-        return currentRefreshToken;
+        return currentAccessToken;
     }
 
     public void setCurrentAccessToken(String currentAccessToken) {

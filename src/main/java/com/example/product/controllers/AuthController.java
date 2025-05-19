@@ -79,6 +79,7 @@ public class AuthController {
                         ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
                                         .httpOnly(true)
                                         .path("/api/v1/auth/refresh")
+                                        .secure(true)
                                         .maxAge(0)
                                         .build();
                         response.addHeader("Set-Cookie", deleteCookie.toString());
@@ -86,6 +87,7 @@ public class AuthController {
                         ResponseCookie cookie = ResponseCookie.from("refresh_token", newRefreshToken)
                                         .httpOnly(true)
                                         .path("/api/v1/auth/refresh")
+                                        .secure(true)
                                         .maxAge(7 * 24 * 60 * 60)
                                         .build();
                         response.addHeader("Set-Cookie", cookie.toString());
@@ -122,6 +124,7 @@ public class AuthController {
                         ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
                                         .httpOnly(true)
                                         .path("/api/v1/auth/refresh")
+                                        .secure(true)
                                         .maxAge(0)
                                         .build();
                         response.addHeader("Set-Cookie", deleteCookie.toString());
@@ -129,6 +132,7 @@ public class AuthController {
                         ResponseCookie cookie = ResponseCookie.from("refresh_token", newRefreshToken)
                                         .httpOnly(true)
                                         .path("/api/v1/auth/refresh")
+                                        .secure(true)
                                         .maxAge(7 * 24 * 60 * 60)
                                         .build();
                         response.addHeader("Set-Cookie", cookie.toString());
@@ -170,6 +174,13 @@ public class AuthController {
                         }
 
                         UserDetailsImpl userDetails = new UserDetailsImpl(user);
+
+                        // Blacklist access token cũ trước khi tạo cái mới
+                        String oldAccessToken = user.getAccessToken();
+                        if (oldAccessToken != null) {
+                                tokenBlacklistService.blacklistToken(oldAccessToken);
+                        }
+
                         String newAccessToken = jwtService.generateToken(userDetails);
                         user.setAccessToken(newAccessToken);
                         userRepo.save(user);
@@ -185,6 +196,13 @@ public class AuthController {
                         }
 
                         CustomerDetailsImpl customerDetails = new CustomerDetailsImpl(customer);
+
+                        // Blacklist access token cũ
+                        String oldAccessToken = customer.getCurrentAccessToken();
+                        if (oldAccessToken != null) {
+                                tokenBlacklistService.blacklistToken(oldAccessToken);
+                        }
+
                         String newAccessToken = jwtService.generateToken(customerDetails);
                         customer.setCurrentAccessToken(newAccessToken);
                         customerRepo.save(customer);
@@ -208,18 +226,54 @@ public class AuthController {
                 // Lấy refresh token từ cookie
                 if (request.getCookies() != null) {
                         for (var cookie : request.getCookies()) {
-                                if (cookie.getName().equals("refresh_token")) {
+                                if ("refresh_token".equals(cookie.getName())) {
                                         refreshToken = cookie.getValue();
                                         break;
                                 }
                         }
                 }
 
-                // Đưa cả hai token vào blacklist nếu tồn tại
-                if (accessToken != null && !tokenBlacklistService.isBlacklisted(accessToken)) {
-                        tokenBlacklistService.blacklistToken(accessToken);
+                String role = "Không xác định";
+
+                if (accessToken != null) {
+                        String email = jwtService.extractUsername(accessToken);
+                        if (email != null) {
+                                // Kiểm tra là User hay Customer
+                                Optional<User> userOpt = userRepo.findByEmail(email);
+                                Optional<Customer> customerOpt = customerRepo.findByEmail(email);
+
+                                if (userOpt.isPresent()) {
+                                        User user = userOpt.get();
+                                        if (accessToken.equals(user.getAccessToken())) {
+                                                role = "User";
+                                        }
+                                        // Blacklist cả token đang lưu nếu khớp
+                                        if (refreshToken != null && refreshToken.equals(user.getRefreshToken())) {
+                                                tokenBlacklistService.blacklistToken(refreshToken);
+                                        }
+                                        if (accessToken.equals(user.getAccessToken())) {
+                                                tokenBlacklistService.blacklistToken(accessToken);
+                                        }
+                                } else if (customerOpt.isPresent()) {
+                                        Customer customer = customerOpt.get();
+                                        if (accessToken.equals(customer.getCurrentAccessToken())) {
+                                                role = "Customer";
+                                        }
+                                        if (refreshToken != null
+                                                        && refreshToken.equals(customer.getCurrentRefreshToken())) {
+                                                tokenBlacklistService.blacklistToken(refreshToken);
+                                        }
+                                        if (accessToken.equals(customer.getCurrentAccessToken())) {
+                                                tokenBlacklistService.blacklistToken(accessToken);
+                                        }
+                                }
+                        } else {
+                                // Không trích xuất được username => token sai format hoặc bị lỗi
+                                tokenBlacklistService.blacklistToken(accessToken);
+                        }
                 }
 
+                // Nếu vẫn còn refreshToken (dù không match DB) thì blacklist
                 if (refreshToken != null && !tokenBlacklistService.isBlacklisted(refreshToken)) {
                         tokenBlacklistService.blacklistToken(refreshToken);
                 }
@@ -233,6 +287,6 @@ public class AuthController {
                                 .build();
                 response.addHeader("Set-Cookie", deleteCookie.toString());
 
-                return ResponseEntity.ok("Đăng xuất thành công");
+                return ResponseEntity.ok("Đăng xuất thành công (" + role + ")");
         }
 }
