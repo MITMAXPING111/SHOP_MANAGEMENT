@@ -13,6 +13,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,11 +36,9 @@ public class ReviewServiceImpl implements ReviewService {
         Review review = new Review();
         review.setRating(dto.getRating());
         review.setComment(dto.getComment());
-        review.setCreatedAt(dto.getCreatedAt());
-        review.setUpdatedAt(dto.getUpdatedAt());
+        review.setCreatedAt(LocalDateTime.now());
         review.setCreatedBy(dto.getCreatedBy());
-        review.setUpdatedBy(dto.getUpdatedBy());
-        review.setReviewDate(dto.getCreatedAt());
+        review.setReviewDate(LocalDateTime.now());
 
         review.setProduct(product);
         review.setCustomer(customer);

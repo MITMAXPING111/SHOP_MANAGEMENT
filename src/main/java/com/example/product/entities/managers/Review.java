@@ -1,9 +1,15 @@
 package com.example.product.entities.managers;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+
+import org.apache.catalina.security.SecurityUtil;
+import org.springframework.data.annotation.CreatedBy;
 
 import com.example.product.entities.products.Product;
 import com.example.product.entities.users.Customer;
+import com.example.product.utils.JwtService;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,4 +41,22 @@ public class Review {
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        this.createdBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.updatedAt = LocalDateTime.now();
+    }
 }
