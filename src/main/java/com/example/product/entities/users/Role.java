@@ -1,6 +1,8 @@
 package com.example.product.entities.users;
 
 import com.example.product.constants.RoleEnum;
+import com.example.product.utils.JwtService;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,10 +24,10 @@ public class Role {
     @Enumerated(EnumType.STRING)
     private RoleEnum name;
 
-    private String createBy;
-    private LocalDateTime createAt;
-    private String updateBy;
-    private LocalDateTime updateAt;
+    private String createdBy;
+    private LocalDateTime createdAt;
+    private String updatedBy;
+    private LocalDateTime updatedAt;
 
     @ManyToMany(mappedBy = "roles")
     private Set<User> users = new HashSet<>();
@@ -36,5 +38,23 @@ public class Role {
     @ManyToMany
     @JoinTable(name = "role_permission", joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
     private Set<Permission> permissions = new HashSet<>();
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        this.createdBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.updatedAt = LocalDateTime.now();
+    }
 
 }

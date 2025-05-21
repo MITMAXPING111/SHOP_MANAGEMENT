@@ -107,8 +107,8 @@ public class RoleServiceImpl implements RoleService {
         try {
             if (req.getId() != null && roleRepo.existsById(req.getId())) {
                 Role role = roleRepo.findById(req.getId()).orElse(null);
-                req.setCreateAt(role.getCreateAt());
-                req.setCreateBy(role.getCreateBy());
+                req.setCreateAt(role.getCreatedAt());
+                req.setCreateBy(role.getCreatedBy());
                 req.setUpdateAt(LocalDateTime.now());
                 req.setUpdateBy("admin@gmail.com");
                 update = true;

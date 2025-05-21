@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.example.product.entities.products.ProductVariant;
+import com.example.product.utils.JwtService;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -40,4 +42,22 @@ public class Discount {
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "discount_variant", joinColumns = @JoinColumn(name = "discount_id"), inverseJoinColumns = @JoinColumn(name = "variant_id"))
     private Set<ProductVariant> productVariants = new HashSet<>();
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        this.createdBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.updatedAt = LocalDateTime.now();
+    }
 }

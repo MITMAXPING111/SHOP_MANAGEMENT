@@ -1,6 +1,8 @@
 package com.example.product.entities.users;
 
 import com.example.product.constants.PermissionEnum;
+import com.example.product.utils.JwtService;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,12 +24,30 @@ public class Permission {
     @Enumerated(EnumType.STRING)
     private PermissionEnum name;
 
-    private String createBy;
-    private LocalDateTime createAt;
-    private String updateBy;
-    private LocalDateTime updateAt;
+    private String createdBy;
+    private LocalDateTime createdAt;
+    private String updatedBy;
+    private LocalDateTime updatedAt;
 
     @ManyToMany(mappedBy = "permissions")
     private Set<Role> roles = new HashSet<>();
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        this.createdBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.updatedAt = LocalDateTime.now();
+    }
 
 }

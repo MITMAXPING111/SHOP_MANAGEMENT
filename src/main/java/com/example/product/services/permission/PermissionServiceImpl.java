@@ -80,8 +80,8 @@ public class PermissionServiceImpl implements PermissionService {
         try {
             if (req.getId() != null && permissionRepo.existsById(req.getId())) {
                 Permission permission = permissionRepo.findById(req.getId()).orElse(null);
-                req.setCreateAt(permission.getCreateAt());
-                req.setCreateBy(permission.getCreateBy());
+                req.setCreateAt(permission.getCreatedAt());
+                req.setCreateBy(permission.getCreatedBy());
                 req.setUpdateAt(LocalDateTime.now());
                 req.setUpdateBy("admin@gmail.com");
                 update = true;

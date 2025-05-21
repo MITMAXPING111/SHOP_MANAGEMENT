@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.example.product.utils.JwtService;
+
 @Entity
 @Getter
 @Setter
@@ -32,4 +34,22 @@ public class ProductAttributeValue {
     private LocalDateTime updatedAt;
     private String createdBy;
     private String updatedBy;
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        this.createdBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.updatedAt = LocalDateTime.now();
+    }
 }

@@ -29,7 +29,7 @@ public class AccountImageServiceImpl implements AccountImageService {
         AccountImage accountImage = mapToEntity(reqAccountImageDTO);
 
         // Set default created/updated time if not provided
-        accountImage.setCreateAt(
+        accountImage.setCreatedAt(
                 reqAccountImageDTO.getCreatedAt() != null ? reqAccountImageDTO.getCreatedAt() : LocalDateTime.now());
 
         AccountImage saved = accountImageRepository.save(accountImage);
@@ -45,8 +45,8 @@ public class AccountImageServiceImpl implements AccountImageService {
         existing.setUrl_image(reqAccountImageDTO.getUrlImage());
         existing.setId_image(reqAccountImageDTO.getIdImage());
         existing.setId_folder(reqAccountImageDTO.getIdFolder());
-        existing.setUpdateBy(reqAccountImageDTO.getUpdatedBy());
-        existing.setUpdateAt(LocalDateTime.now());
+        existing.setUpdatedBy(reqAccountImageDTO.getUpdatedBy());
+        existing.setUpdatedAt(LocalDateTime.now());
 
         // Update associated user
         if (reqAccountImageDTO.getUserId() != null) {
@@ -102,8 +102,8 @@ public class AccountImageServiceImpl implements AccountImageService {
         accountImage.setId_image(dto.getIdImage());
         accountImage.setId_folder(dto.getIdFolder());
 
-        accountImage.setCreateBy(dto.getCreatedBy());
-        accountImage.setUpdateBy(dto.getUpdatedBy());
+        accountImage.setCreatedBy(dto.getCreatedBy());
+        accountImage.setUpdatedBy(dto.getUpdatedBy());
 
         // Set User
         if (dto.getUserId() != null) {
@@ -132,10 +132,10 @@ public class AccountImageServiceImpl implements AccountImageService {
         dto.setIdImage(entity.getId_image());
         dto.setIdFolder(entity.getId_folder());
 
-        dto.setCreatedBy(entity.getCreateBy());
-        dto.setCreatedAt(entity.getCreateAt());
-        dto.setUpdatedBy(entity.getUpdateBy());
-        dto.setUpdatedAt(entity.getUpdateAt());
+        dto.setCreatedBy(entity.getCreatedBy());
+        dto.setCreatedAt(entity.getCreatedAt());
+        dto.setUpdatedBy(entity.getUpdatedBy());
+        dto.setUpdatedAt(entity.getUpdatedAt());
 
         if (entity.getUser() != null) {
             dto.setUserId(entity.getUser().getId());

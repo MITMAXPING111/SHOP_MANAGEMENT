@@ -8,6 +8,8 @@ import java.util.List;
 import com.example.product.constants.PaymentMethod;
 import com.example.product.constants.StatusPayment;
 import com.example.product.entities.products.Order;
+import com.example.product.utils.JwtService;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,4 +40,22 @@ public class Payment {
 
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Order> orders = new ArrayList<>();
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        this.createdBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.updatedAt = LocalDateTime.now();
+    }
 }

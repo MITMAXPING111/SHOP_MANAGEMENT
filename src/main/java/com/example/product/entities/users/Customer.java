@@ -9,6 +9,8 @@ import java.util.Set;
 import com.example.product.constants.GenderEnum;
 import com.example.product.entities.managers.Review;
 import com.example.product.entities.products.Order;
+import com.example.product.utils.JwtService;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -33,10 +35,10 @@ public class Customer {
     @Enumerated(EnumType.STRING)
     private GenderEnum gender;
 
-    private String createBy;
-    private LocalDateTime createAt;
-    private String updateBy;
-    private LocalDateTime updateAt;
+    private String createdBy;
+    private LocalDateTime createdAt;
+    private String updatedBy;
+    private LocalDateTime updatedAt;
 
     @Column(name = "current_refresh_token")
     private String currentRefreshToken;
@@ -76,5 +78,23 @@ public class Customer {
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Review> reviews = new ArrayList<>();
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        this.createdBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.updatedAt = LocalDateTime.now();
+    }
 
 }

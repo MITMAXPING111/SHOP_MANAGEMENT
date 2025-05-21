@@ -3,6 +3,8 @@ package com.example.product.entities.managers;
 import java.time.LocalDateTime;
 
 import com.example.product.entities.products.ProductVariant;
+import com.example.product.utils.JwtService;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,4 +32,22 @@ public class Inventory {
     @OneToOne
     @JoinColumn(name = "product_variant_id", unique = true)
     private ProductVariant productVariant;
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        this.createdBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.updatedAt = LocalDateTime.now();
+    }
 }

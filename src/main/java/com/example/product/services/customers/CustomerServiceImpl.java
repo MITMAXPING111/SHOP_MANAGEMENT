@@ -29,7 +29,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public ResCustomerDTO createCustomer(ReqCustomerDTO reqCustomerDTO) {
         Customer customer = mapToEntity(reqCustomerDTO);
-        customer.setCreateAt(LocalDateTime.now());
+        customer.setCreatedAt(LocalDateTime.now());
 
         Customer savedCustomer = customerRepository.save(customer);
         return mapToDTO(savedCustomer);
@@ -43,8 +43,8 @@ public class CustomerServiceImpl implements CustomerService {
         BeanUtils.copyProperties(reqCustomerDTO, customer, "id", "createdAt", "createdBy", "roles", "addresses",
                 "accountImage");
 
-        customer.setUpdateAt(LocalDateTime.now());
-        customer.setUpdateBy(reqCustomerDTO.getUpdatedBy());
+        customer.setUpdatedAt(LocalDateTime.now());
+        customer.setUpdatedBy(reqCustomerDTO.getUpdatedBy());
 
         // Update roles
         Set<Role> roles = new HashSet<>();
@@ -151,10 +151,10 @@ public class CustomerServiceImpl implements CustomerService {
                 .avatar(customer.getAvatar())
                 .gender(customer.getGender())
                 .enabled(customer.isEnabled())
-                .createBy(customer.getCreateBy())
-                .createAt(customer.getCreateAt())
-                .updateBy(customer.getUpdateBy())
-                .updateAt(customer.getUpdateAt())
+                .createBy(customer.getCreatedBy())
+                .createAt(customer.getCreatedAt())
+                .updateBy(customer.getUpdatedBy())
+                .updateAt(customer.getUpdatedAt())
                 .resRoles(resRoles)
                 .addressIds(customer.getAddresses() != null
                         ? customer.getAddresses().stream().map(Address::getId).collect(Collectors.toSet())

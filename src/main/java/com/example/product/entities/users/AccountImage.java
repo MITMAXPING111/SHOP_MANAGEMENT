@@ -2,6 +2,8 @@ package com.example.product.entities.users;
 
 import java.time.LocalDateTime;
 
+import com.example.product.utils.JwtService;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,8 +31,27 @@ public class AccountImage {
     @JoinColumn(name = "customer_id", unique = true)
     private Customer customer;
 
-    private String createBy;
-    private LocalDateTime createAt;
-    private String updateBy;
-    private LocalDateTime updateAt;
+    private String createdBy;
+    private LocalDateTime createdAt;
+    private String updatedBy;
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        this.createdBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.updatedAt = LocalDateTime.now();
+    }
+
 }

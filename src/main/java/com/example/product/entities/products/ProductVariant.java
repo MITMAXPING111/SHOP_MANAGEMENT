@@ -2,6 +2,8 @@ package com.example.product.entities.products;
 
 import com.example.product.entities.managers.Discount;
 import com.example.product.entities.managers.Inventory;
+import com.example.product.utils.JwtService;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -51,4 +53,22 @@ public class ProductVariant {
     private LocalDateTime updatedAt;
     private String createdBy;
     private String updatedBy;
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        this.createdBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.updatedAt = LocalDateTime.now();
+    }
 }

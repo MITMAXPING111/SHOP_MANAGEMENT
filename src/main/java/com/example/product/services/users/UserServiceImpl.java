@@ -31,8 +31,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResUserDTO createUser(ReqUserDTO reqUserDTO) {
         User user = mapToEntity(reqUserDTO);
-        user.setCreateAt(LocalDateTime.now());
-        user.setUpdateAt(LocalDateTime.now());
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
 
         User savedUser = userRepository.save(user);
         return mapToDTO(savedUser);
@@ -44,7 +44,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
 
         BeanUtils.copyProperties(reqUserDTO, user, "id", "createAt", "createBy", "roles");
-        user.setUpdateAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
 
         Set<Role> roles = new HashSet<>();
         for (ReqRoleId roleId : reqUserDTO.getReqRoleIds()) {
@@ -151,10 +151,10 @@ public class UserServiceImpl implements UserService {
                 .ward(user.getWard())
                 .addressDetail(user.getAddressDetail())
                 .gender(user.getGender())
-                .createdBy(user.getCreateBy())
-                .createdAt(user.getCreateAt())
-                .updatedBy(user.getUpdateBy())
-                .updatedAt(user.getUpdateAt())
+                .createdBy(user.getCreatedBy())
+                .createdAt(user.getCreatedAt())
+                .updatedBy(user.getUpdatedBy())
+                .updatedAt(user.getUpdatedAt())
                 .resRoles(resRoles)
                 .url_image(user.getAccountImage() != null ? user.getAccountImage().getUrl_image() : null)
                 .build();

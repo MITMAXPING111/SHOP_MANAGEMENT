@@ -11,6 +11,8 @@ import com.example.product.entities.managers.Payment;
 import com.example.product.entities.managers.Shipment;
 import com.example.product.entities.users.Address;
 import com.example.product.entities.users.Customer;
+import com.example.product.utils.JwtService;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -55,4 +57,22 @@ public class Order {
     @ManyToOne
     @JoinColumn(name = "payment_id")
     private Payment payment;
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        this.createdBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedBy = JwtService.getCurrentUserLogin().isPresent() == true
+                ? JwtService.getCurrentUserLogin().get()
+                : "";
+
+        this.updatedAt = LocalDateTime.now();
+    }
 }
