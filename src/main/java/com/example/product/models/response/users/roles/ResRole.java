@@ -19,9 +19,9 @@ import com.example.product.models.response.users.permissions.ResPermission;
 public class ResRole {
     private Long id;
     private RoleEnum name;
-    private String createBy;
-    private LocalDateTime createAt;
-    private String updateBy;
-    private LocalDateTime updateAt;
+    private String createdBy;
+    private LocalDateTime createdAt;
+    private String updatedBy;
+    private LocalDateTime updatedAt;
     private Set<ResPermission> resPermissions = new HashSet<>();
 }

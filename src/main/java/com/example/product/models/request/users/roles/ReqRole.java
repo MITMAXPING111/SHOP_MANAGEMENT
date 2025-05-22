@@ -19,8 +19,8 @@ public class ReqRole {
     @Enumerated(EnumType.STRING)
     private RoleEnum name;
     private Set<ReqPermissionId> reqPermissionIds = new HashSet<>();
-    private String createBy;
-    private LocalDateTime createAt;
-    private String updateBy;
-    private LocalDateTime updateAt;
+    private String createdBy;
+    private LocalDateTime createdAt;
+    private String updatedBy;
+    private LocalDateTime updatedAt;
 }

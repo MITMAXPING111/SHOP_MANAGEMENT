@@ -100,6 +100,11 @@ public class CustomerServiceImpl implements CustomerService {
         customerRepository.deleteById(id);
     }
 
+    public Customer handleGetCustomerByUsername(String username) {
+        return this.customerRepository.findByEmail(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with email: " + username));
+    }
+
     private Customer mapToEntity(ReqCustomerDTO dto) {
         Customer customer = new Customer();
         BeanUtils.copyProperties(dto, customer, "id", "reqRoleIds", "addressIds", "accountImageId");

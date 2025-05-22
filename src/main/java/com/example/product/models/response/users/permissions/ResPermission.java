@@ -10,10 +10,15 @@ import com.example.product.constants.PermissionEnum;
 @Getter
 @Setter
 public class ResPermission {
-    private Long id;
+    private Integer id;
     private PermissionEnum name;
-    private String createBy;
-    private LocalDateTime createAt;
-    private String updateBy;
-    private LocalDateTime updateAt;
+
+    private String apiPath;
+    private String method;
+    private String module;
+
+    private String createdBy;
+    private LocalDateTime createdAt;
+    private String updatedBy;
+    private LocalDateTime updatedAt;
 }

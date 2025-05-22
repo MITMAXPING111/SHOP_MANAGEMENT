@@ -15,8 +15,12 @@ public class ReqPermission {
     private Integer id;
     @Enumerated(EnumType.STRING)
     private PermissionEnum name;
-    private String createBy;
-    private LocalDateTime createAt;
-    private String updateBy;
-    private LocalDateTime updateAt;
+
+    private String apiPath;
+    private String method;
+    private String module;
+
+    // private LocalDateTime createdAt;
+    // private LocalDateTime updatedAt;
+
 }

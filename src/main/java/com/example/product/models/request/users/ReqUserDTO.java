@@ -32,5 +32,4 @@ public class ReqUserDTO {
     private LocalDateTime updatedAt;
 
     private Set<ReqRoleId> reqRoleIds = new HashSet<>();
-    private String url_image;
 }

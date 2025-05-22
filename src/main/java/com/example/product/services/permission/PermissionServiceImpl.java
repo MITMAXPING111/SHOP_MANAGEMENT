@@ -78,19 +78,22 @@ public class PermissionServiceImpl implements PermissionService {
         boolean update = false;
 
         try {
+            Permission permission;
+
             if (req.getId() != null && permissionRepo.existsById(req.getId())) {
-                Permission permission = permissionRepo.findById(req.getId()).orElse(null);
-                req.setCreateAt(permission.getCreatedAt());
-                req.setCreateBy(permission.getCreatedBy());
-                req.setUpdateAt(LocalDateTime.now());
-                req.setUpdateBy("admin@gmail.com");
+                // Update
+                permission = permissionRepo.findById(req.getId()).orElse(null);
+                // req.setUpdatedAt(LocalDateTime.now());
+                modelMapper.map(req, permission);
+
                 update = true;
             } else {
-                req.setCreateAt(LocalDateTime.now());
-                req.setCreateBy("admin@gmail.com");
+                // Create
+                permission = modelMapper.map(req, Permission.class);
+                // req.setCreatedAt(LocalDateTime.now());
+
             }
 
-            Permission permission = modelMapper.map(req, Permission.class);
             permissionRepo.save(permission);
             ResPermission result = modelMapper.map(permission, ResPermission.class);
 

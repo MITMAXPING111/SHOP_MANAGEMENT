@@ -2,6 +2,7 @@ package com.example.product.configs;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.config.Customizer;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -27,6 +28,8 @@ public class SecurityConfig {
     private JwtFilter jwtFilter;
     @Autowired
     private CustomUserDetailsService userDetailsService;
+    @Autowired
+    private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -46,9 +49,10 @@ public class SecurityConfig {
                         .permitAll()
                         // .requestMatchers("/**").permitAll()
                         .anyRequest().authenticated())
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(customAuthenticationEntryPoint))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class) // mọi request khi vào
-                                                                                        // controller đều phải qua
-                                                                                        // jwtFilter
+                // controller đều phải qua
+                // jwtFilter
                 .build();
     }
 

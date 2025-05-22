@@ -29,8 +29,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-            FilterChain filterChain)
-            throws ServletException, IOException {
+            FilterChain filterChain) throws ServletException, IOException {
+
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -38,29 +38,46 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        final String jwt = authHeader.substring(7); // Lấy JWT từ header
-        System.out.println("Token từ client: " + jwt + " | Hash: " + jwt.hashCode());
+        final String jwt = authHeader.substring(7);
 
-        // **Kiểm tra token có bị blacklist không**
-        if (tokenBlacklistService.isBlacklisted(jwt)) {
-            // Nếu token đã bị blacklist, trả về 401 và không tiếp tục xử lý
+        try {
+            // Kiểm tra blacklist trước
+            if (tokenBlacklistService.isBlacklisted(jwt)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Token đã bị thu hồi, vui lòng đăng nhập lại.");
+                return;
+            }
+
+            final String email = jwtService.extractUsername(jwt);
+
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                if (jwtService.isTokenValid(jwt, userDetails)) {
+                    UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    token.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(token);
+                } else {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("Token không hợp lệ hoặc đã hết hạn.");
+                    return;
+                }
+            }
+
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Token đã bị thu hồi, vui lòng đăng nhập lại.");
+            response.getWriter().write("Token đã hết hạn, vui lòng đăng nhập lại.");
+            return;
+        } catch (io.jsonwebtoken.MalformedJwtException | io.jsonwebtoken.SignatureException e) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token không hợp lệ.");
+            return;
+        } catch (Exception e) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Lỗi xác thực token.");
             return;
         }
 
-        final String email = jwtService.extractUsername(jwt); // Lấy email từ token
-
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-            if (jwtService.isTokenValid(jwt, userDetails)) {
-                // Tạo đối tượng authentication và lưu vào SecurityContext
-                UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                token.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(token); // Lưu vào SecurityContext
-            }
-        }
         filterChain.doFilter(request, response);
     }
 }

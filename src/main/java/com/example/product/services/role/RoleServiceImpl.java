@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class RoleServiceImpl implements RoleService {
@@ -105,41 +106,41 @@ public class RoleServiceImpl implements RoleService {
         boolean update = false;
 
         try {
+            Role role;
+
             if (req.getId() != null && roleRepo.existsById(req.getId())) {
-                Role role = roleRepo.findById(req.getId()).orElse(null);
-                req.setCreateAt(role.getCreatedAt());
-                req.setCreateBy(role.getCreatedBy());
-                req.setUpdateAt(LocalDateTime.now());
-                req.setUpdateBy("admin@gmail.com");
+                // Cập nhật Role
+                role = roleRepo.findById(req.getId())
+                        .orElseThrow(() -> new RuntimeException("Role not found for update"));
+                role.setName(req.getName());
+                role.setUpdatedAt(LocalDateTime.now());
+                role.setUpdatedBy("admin@gmail.com"); // Có thể lấy từ JWT sau
+
                 update = true;
             } else {
-                req.setCreateAt(LocalDateTime.now());
-                req.setCreateBy("admin@gmail.com");
+                // Tạo mới Role
+                role = new Role();
+                role.setName(req.getName());
+                role.setCreatedAt(LocalDateTime.now());
+                role.setCreatedBy("admin@gmail.com");
             }
 
-            Set<ReqPermissionId> permissionIds = req.getReqPermissionIds();
+            // Gán permissions
             Set<Permission> permissions = new HashSet<>();
-
-            for (ReqPermissionId permissionId : permissionIds) {
-                Permission permission = permissionRepo.findById(permissionId.getId()).orElse(null);
-                if (permission != null)
-                    permissions.add(permission);
+            for (ReqPermissionId permissionId : req.getReqPermissionIds()) {
+                permissionRepo.findById(permissionId.getId()).ifPresent(permissions::add);
             }
-
-            Role role = modelMapper.map(req, Role.class);
-
             role.setPermissions(permissions);
 
+            // Lưu role
             roleRepo.save(role);
+
+            // Mapping kết quả trả về
             ResRole result = modelMapper.map(role, ResRole.class);
 
-            Set<ResPermission> resPermissions = new HashSet<>();
-
-            for (Permission permission : role.getPermissions()) {
-                ResPermission resPermission = modelMapper.map(permission, ResPermission.class);
-
-                resPermissions.add(resPermission);
-            }
+            Set<ResPermission> resPermissions = role.getPermissions().stream()
+                    .map(permission -> modelMapper.map(permission, ResPermission.class))
+                    .collect(Collectors.toSet());
 
             result.setResPermissions(resPermissions);
 
@@ -147,11 +148,13 @@ public class RoleServiceImpl implements RoleService {
             restResponse.setData(result);
             restResponse.setSuccess(true);
             restResponse.setStatusCode(HttpStatus.OK.value());
+
         } catch (Exception e) {
-            restResponse.setMessage(update ? ("Failed to update role: " + e.getMessage())
+            restResponse.setMessage(update
+                    ? ("Failed to update role: " + e.getMessage())
                     : ("Failed to create role: " + e.getMessage()));
             restResponse.setSuccess(false);
-            restResponse.setStatusCode(HttpStatus.NOT_FOUND.value());
+            restResponse.setStatusCode(HttpStatus.BAD_REQUEST.value()); // hoặc 500 tùy logic
         }
 
         return restResponse;

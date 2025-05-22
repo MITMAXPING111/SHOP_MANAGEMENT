@@ -4,6 +4,7 @@ import com.example.product.constants.PermissionEnum;
 import com.example.product.utils.JwtService;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -19,10 +20,19 @@ import java.util.Set;
 public class Permission {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     @Enumerated(EnumType.STRING)
     private PermissionEnum name;
+
+    @NotBlank(message = "apiPath không được để trống")
+    private String apiPath;
+
+    @NotBlank(message = "method không được để trống")
+    private String method;
+
+    @NotBlank(message = "module không được để trống")
+    private String module;
 
     private String createdBy;
     private LocalDateTime createdAt;
@@ -31,6 +41,13 @@ public class Permission {
 
     @ManyToMany(mappedBy = "permissions")
     private Set<Role> roles = new HashSet<>();
+
+    public Permission(PermissionEnum name, String apiPath, String method, String module) {
+        this.name = name;
+        this.apiPath = apiPath;
+        this.method = method;
+        this.module = module;
+    }
 
     @PrePersist
     public void handleBeforeCreate() {

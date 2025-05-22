@@ -32,5 +32,4 @@ public class ResUserDTO {
     private LocalDateTime updatedAt;
 
     private Set<ResRole> resRoles = new HashSet<>();
-    private String url_image;
 }

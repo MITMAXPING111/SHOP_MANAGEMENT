@@ -104,7 +104,7 @@ public class UserServiceImpl implements UserService {
 
     private User mapToEntity(ReqUserDTO dto) {
         User user = new User();
-        BeanUtils.copyProperties(dto, user, "id", "reqRoleIds", "url_image");
+        BeanUtils.copyProperties(dto, user, "id", "reqRoleIds");
 
         Set<Role> roles = new HashSet<>();
         for (ReqRoleId roleId : dto.getReqRoleIds()) {
@@ -122,6 +122,10 @@ public class UserServiceImpl implements UserService {
                     ResRole resRole = new ResRole();
                     resRole.setId(role.getId());
                     resRole.setName(role.getName());
+                    resRole.setCreatedBy(role.getCreatedBy());
+                    resRole.setCreatedAt(role.getCreatedAt());
+                    resRole.setUpdatedAt(role.getUpdatedAt());
+                    resRole.setUpdatedBy(role.getUpdatedBy());
 
                     // Mapping permissions
                     if (role.getPermissions() != null) {
@@ -130,6 +134,13 @@ public class UserServiceImpl implements UserService {
                                     ResPermission resPermission = new ResPermission();
                                     resPermission.setId(permission.getId());
                                     resPermission.setName(permission.getName());
+                                    resPermission.setApiPath(permission.getApiPath());
+                                    resPermission.setMethod(permission.getMethod());
+                                    resPermission.setModule(permission.getModule());
+                                    resPermission.setCreatedAt(permission.getCreatedAt());
+                                    resPermission.setCreatedBy(permission.getCreatedBy());
+                                    resPermission.setUpdatedAt(permission.getUpdatedAt());
+                                    resPermission.setUpdatedBy(permission.getUpdatedBy());
                                     return resPermission;
                                 })
                                 .collect(Collectors.toSet());
@@ -156,7 +167,6 @@ public class UserServiceImpl implements UserService {
                 .updatedBy(user.getUpdatedBy())
                 .updatedAt(user.getUpdatedAt())
                 .resRoles(resRoles)
-                .url_image(user.getAccountImage() != null ? user.getAccountImage().getUrl_image() : null)
                 .build();
     }
 
