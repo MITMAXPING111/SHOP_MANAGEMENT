@@ -18,14 +18,10 @@ public class PermissionInterceptorConfiguration implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(permissionInterceptor())
                 .excludePathPatterns(
-                        "/api/v1/auth/**",
-                        "/api/v1/email/**",
-                        "/api-docs/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
-                        "/api-docs/swagger-config",
-                        "/favicon.ico",
-                        "/webjars/**",
-                        "/swagger-resources/**");
+                        "/api/v1/auth/login",
+                        "/api/v1/auth/register-user",
+                        "/api/v1/auth/register-customer",
+                        "/api/v1/auth/refresh",
+                        "/api/v1/email/**");
     }
 }

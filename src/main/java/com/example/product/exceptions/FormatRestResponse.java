@@ -8,13 +8,14 @@ import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
+import org.springframework.core.io.Resource;
 
 import com.example.product.utils.annotation.ApiMessage;
 
 import jakarta.servlet.http.HttpServletResponse;
 
 @ControllerAdvice
-public class FomatRestResponse implements ResponseBodyAdvice<Object> {
+public class FormatRestResponse implements ResponseBodyAdvice<Object> {
 
     @Override
     public boolean supports(MethodParameter returnType, Class converterType) {
@@ -22,7 +23,6 @@ public class FomatRestResponse implements ResponseBodyAdvice<Object> {
     }
 
     @Override
-    @Nullable
     public Object beforeBodyWrite(
             Object body,
             MethodParameter returnType,
@@ -35,9 +35,16 @@ public class FomatRestResponse implements ResponseBodyAdvice<Object> {
 
         RestResponse<Object> res = new RestResponse<Object>();
         res.setStatusCode(status);
-        if (body instanceof String) {
+
+        if (body instanceof String || body instanceof Resource) {
             return body;
         }
+
+        String path = request.getURI().getPath();
+        if (path.startsWith("/v3/api-docs") || path.startsWith("/swagger-ui")) {
+            return body;
+        }
+
         if (status >= 400) {
             return body;
         } else {

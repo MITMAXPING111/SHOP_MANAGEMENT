@@ -42,13 +42,9 @@ public class SecurityConfig {
                                 "/api/v1/auth/register-customer",
                                 "/api/v1/auth/refresh",
                                 "/api/v1/email/**",
-                                "/api-docs/**",
+                                "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/api-docs/swagger-config",
-                                "/favicon.ico",
-                                "/webjars/**",
-                                "/swagger-resources/**")
+                                "/swagger-ui.html")
                         .permitAll()
                         // .requestMatchers("/**").permitAll()
                         .anyRequest().authenticated())
@@ -62,12 +58,11 @@ public class SecurityConfig {
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring().requestMatchers(
-                "/api-docs/**",
+                "/v3/api-docs/**",
                 "/swagger-ui/**",
                 "/swagger-ui.html",
-                "/webjars/**",
                 "/swagger-resources/**",
-                "/favicon.ico");
+                "/webjars/**");
     }
 
     @Bean
