@@ -1,6 +1,7 @@
 package com.example.product.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,21 +14,31 @@ import com.example.product.configs.TokenBlacklistService;
 import com.example.product.configs.UserDetailsImpl;
 import com.example.product.entities.users.Customer;
 import com.example.product.entities.users.User;
+import com.example.product.exceptions.errors.IdInvalidException;
 import com.example.product.models.request.auth.ReqAuthDTO;
 import com.example.product.models.request.email.ResetPasswordRequest;
+import com.example.product.models.request.users.ReqCustomerDTO;
+import com.example.product.models.request.users.ReqUserDTO;
 import com.example.product.models.response.auth.ResAuthDTO;
+import com.example.product.models.response.users.ResCustomerDTO;
+import com.example.product.models.response.users.ResUserDTO;
 import com.example.product.repositories.CustomerRepository;
 import com.example.product.repositories.UserRepository;
+import com.example.product.services.customers.CustomerService;
 import com.example.product.services.email.EmailService;
+import com.example.product.services.users.UserService;
 import com.example.product.utils.JwtService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
         @Autowired
@@ -50,6 +61,10 @@ public class AuthController {
 
         @Autowired
         private PasswordEncoder passwordEncoder;
+
+        private final UserService userService;
+
+        private final CustomerService customerService;
 
         @PostMapping("/login")
         public ResponseEntity<?> login(@RequestBody ReqAuthDTO request, HttpServletResponse response) {
@@ -347,4 +362,34 @@ public class AuthController {
 
                 return ResponseEntity.status(404).body("Không tìm thấy tài khoản với email: " + request.getEmail());
         }
+
+        @PostMapping("/register-user")
+        public ResponseEntity<ResUserDTO> createUser(@Valid @RequestBody ReqUserDTO reqUserDTO)
+                        throws IdInvalidException {
+                boolean isEmailExist = this.userService.isEmailExist(reqUserDTO.getEmail());
+                if (isEmailExist) {
+                        throw new IdInvalidException(
+                                        "Email" + reqUserDTO.getEmail() + "đã tồn tại vui lòng sử dụng email khác.");
+                }
+                String hashPassword = this.passwordEncoder.encode(reqUserDTO.getPassword());
+                reqUserDTO.setPassword(hashPassword);
+                ResUserDTO createdUser = userService.createUser(reqUserDTO);
+                return ResponseEntity.ok(createdUser);
+        }
+
+        @PostMapping("/register-customer")
+        public ResponseEntity<ResCustomerDTO> createCustomer(@Valid @RequestBody ReqCustomerDTO reqCustomerDTO)
+                        throws IdInvalidException {
+                boolean isEmailExist = this.customerService.isEmailExist(reqCustomerDTO.getEmail());
+                if (isEmailExist) {
+                        throw new IdInvalidException(
+                                        "Email" + reqCustomerDTO.getEmail()
+                                                        + "đã tồn tại vui lòng sử dụng email khác.");
+                }
+                String hashPassword = this.passwordEncoder.encode(reqCustomerDTO.getPassword());
+                reqCustomerDTO.setPassword(hashPassword);
+                ResCustomerDTO created = customerService.createCustomer(reqCustomerDTO);
+                return new ResponseEntity<>(created, HttpStatus.CREATED);
+        }
+
 }

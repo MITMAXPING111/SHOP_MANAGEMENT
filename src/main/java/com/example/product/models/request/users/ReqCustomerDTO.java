@@ -31,4 +31,16 @@ public class ReqCustomerDTO {
     private LocalDateTime createdAt;
     private String updatedBy;
     private LocalDateTime updatedAt;
+
+    private AccountImageData accountImageData;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AccountImageData {
+        private String url_image;
+        private String id_image;
+        private String id_folder;
+    }
 }

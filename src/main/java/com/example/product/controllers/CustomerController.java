@@ -1,5 +1,6 @@
 package com.example.product.controllers;
 
+import com.example.product.exceptions.errors.IdInvalidException;
 import com.example.product.models.request.users.ReqCustomerDTO;
 import com.example.product.models.response.users.ResCustomerDTO;
 import com.example.product.services.customers.CustomerService;
@@ -22,7 +23,13 @@ public class CustomerController {
     private final PasswordEncoder passwordEncoder;
 
     @PostMapping
-    public ResponseEntity<ResCustomerDTO> createCustomer(@Valid @RequestBody ReqCustomerDTO reqCustomerDTO) {
+    public ResponseEntity<ResCustomerDTO> createCustomer(@Valid @RequestBody ReqCustomerDTO reqCustomerDTO)
+            throws IdInvalidException {
+        boolean isEmailExist = this.customerService.isEmailExist(reqCustomerDTO.getEmail());
+        if (isEmailExist) {
+            throw new IdInvalidException(
+                    "Email" + reqCustomerDTO.getEmail() + "đã tồn tại vui lòng sử dụng email khác.");
+        }
         String hashPassword = this.passwordEncoder.encode(reqCustomerDTO.getPassword());
         reqCustomerDTO.setPassword(hashPassword);
         ResCustomerDTO created = customerService.createCustomer(reqCustomerDTO);

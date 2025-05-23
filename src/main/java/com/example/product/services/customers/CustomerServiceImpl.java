@@ -10,6 +10,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -27,15 +28,16 @@ public class CustomerServiceImpl implements CustomerService {
     private final AccountImageRepository accountImageRepository;
 
     @Override
+    @Transactional
     public ResCustomerDTO createCustomer(ReqCustomerDTO reqCustomerDTO) {
         Customer customer = mapToEntity(reqCustomerDTO);
         customer.setCreatedAt(LocalDateTime.now());
-
         Customer savedCustomer = customerRepository.save(customer);
         return mapToDTO(savedCustomer);
     }
 
     @Override
+    @Transactional
     public ResCustomerDTO updateCustomer(Long id, ReqCustomerDTO reqCustomerDTO) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Customer not found with ID: " + id));
@@ -66,12 +68,46 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setAddresses(addresses);
 
         // Update account image
+        AccountImage currentAccountImage = customer.getAccountImage();
         if (reqCustomerDTO.getAccountImageId() != null) {
             AccountImage accountImage = accountImageRepository.findById(reqCustomerDTO.getAccountImageId())
-                    .orElse(null);
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "AccountImage not found with ID: " + reqCustomerDTO.getAccountImageId()));
+
+            // Check if the AccountImage is already assigned to another Customer
+            if (accountImage.getCustomer() != null && !accountImage.getCustomer().getId().equals(customer.getId())) {
+                throw new IllegalStateException("AccountImage with ID " + reqCustomerDTO.getAccountImageId()
+                        + " is already assigned to another customer.");
+            }
+
+            // Clear existing AccountImage if different
+            if (currentAccountImage != null && !currentAccountImage.getId().equals(accountImage.getId())) {
+                currentAccountImage.setCustomer(null);
+                accountImageRepository.save(currentAccountImage);
+            }
+
+            // Set the new AccountImage
             customer.setAccountImage(accountImage);
+            accountImage.setCustomer(customer);
+            accountImageRepository.save(accountImage);
+        } else if (reqCustomerDTO.getAccountImageData() != null) {
+            // Create new AccountImage if data is provided
+            AccountImage accountImage = new AccountImage();
+            accountImage.setUrl_image(reqCustomerDTO.getAccountImageData().getUrl_image() != null
+                    ? reqCustomerDTO.getAccountImageData().getUrl_image()
+                    : "default_image_url");
+            accountImage.setId_image(reqCustomerDTO.getAccountImageData().getId_image());
+            accountImage.setId_folder(reqCustomerDTO.getAccountImageData().getId_folder());
+            accountImage.setCustomer(customer);
+            customer.setAccountImage(accountImage);
+            accountImageRepository.save(accountImage);
         } else {
-            customer.setAccountImage(null);
+            // Clear existing AccountImage if no ID or data is provided
+            if (currentAccountImage != null) {
+                currentAccountImage.setCustomer(null);
+                accountImageRepository.save(currentAccountImage);
+                customer.setAccountImage(null);
+            }
         }
 
         Customer updatedCustomer = customerRepository.save(customer);
@@ -100,6 +136,7 @@ public class CustomerServiceImpl implements CustomerService {
         customerRepository.deleteById(id);
     }
 
+    @Override
     public Customer handleGetCustomerByUsername(String username) {
         return this.customerRepository.findByEmail(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with email: " + username));
@@ -107,7 +144,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     private Customer mapToEntity(ReqCustomerDTO dto) {
         Customer customer = new Customer();
-        BeanUtils.copyProperties(dto, customer, "id", "reqRoleIds", "addressIds", "accountImageId");
+        BeanUtils.copyProperties(dto, customer, "id", "reqRoleIds", "addressIds", "accountImageId", "accountImageData");
 
         // Map roles
         Set<Role> roles = new HashSet<>();
@@ -130,11 +167,42 @@ public class CustomerServiceImpl implements CustomerService {
         // Map account image
         if (dto.getAccountImageId() != null) {
             AccountImage accountImage = accountImageRepository.findById(dto.getAccountImageId())
-                    .orElse(null);
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "AccountImage not found with ID: " + dto.getAccountImageId()));
+            if (accountImage.getCustomer() != null) {
+                throw new IllegalStateException("AccountImage with ID " + dto.getAccountImageId()
+                        + " is already assigned to another customer.");
+            }
             customer.setAccountImage(accountImage);
+            accountImage.setCustomer(customer);
+            accountImageRepository.save(accountImage);
+        } else if (dto.getAccountImageData() != null) {
+            // Create new AccountImage if data is provided
+            AccountImage accountImage = new AccountImage();
+            accountImage.setUrl_image(dto.getAccountImageData().getUrl_image() != null
+                    ? dto.getAccountImageData().getUrl_image()
+                    : "default_image_url");
+            accountImage.setId_image(dto.getAccountImageData().getId_image());
+            accountImage.setId_folder(dto.getAccountImageData().getId_folder());
+            accountImage.setCustomer(customer);
+            customer.setAccountImage(accountImage);
+            accountImageRepository.save(accountImage);
+        } else {
+            // Create default AccountImage if neither ID nor data is provided
+            AccountImage accountImage = new AccountImage();
+            accountImage.setUrl_image("default_image_url");
+            accountImage.setId_image("default_image_id");
+            accountImage.setId_folder("default_folder_id");
+            accountImage.setCustomer(customer);
+            customer.setAccountImage(accountImage);
+            accountImageRepository.save(accountImage);
         }
 
         return customer;
+    }
+
+    public boolean isEmailExist(String email) {
+        return this.customerRepository.existsByEmail(email);
     }
 
     private ResCustomerDTO mapToDTO(Customer customer) {
@@ -143,7 +211,6 @@ public class CustomerServiceImpl implements CustomerService {
                     ResRole resRole = new ResRole();
                     resRole.setId(role.getId());
                     resRole.setName(role.getName());
-                    // Add more mapping if needed
                     return resRole;
                 })
                 .collect(Collectors.toSet());

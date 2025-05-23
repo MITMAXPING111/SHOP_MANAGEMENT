@@ -20,4 +20,6 @@ public interface CustomerService {
     void deleteCustomer(Long id);
 
     Customer handleGetCustomerByUsername(String username);
+
+    boolean isEmailExist(String email);
 }
