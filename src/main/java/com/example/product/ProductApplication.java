@@ -38,6 +38,15 @@ public class ProductApplication {
 				dotenv.get("PRODUCT_JWT_ACCESS_TOKEN_VALIDITY_IN_SECONDS"));
 		System.setProperty("PRODUCT_JWT_REFRESH_TOKEN_VALIDITY_IN_SECONDS",
 				dotenv.get("PRODUCT_JWT_REFRESH_TOKEN_VALIDITY_IN_SECONDS"));
+
+		// Google OAuth2 config
+		System.setProperty("SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID",
+				dotenv.get("GOOGLE_CLIENT_ID"));
+		System.setProperty("SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET",
+				dotenv.get("GOOGLE_CLIENT_SECRET"));
+		System.setProperty("SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_REDIRECT_URI",
+				dotenv.get("GOOGLE_REDIRECT_URI"));
+		System.setProperty("SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_SCOPE", dotenv.get("GOOGLE_SCOPE"));
 		SpringApplication.run(ProductApplication.class, args);
 	}
 

@@ -135,4 +135,10 @@ public class JwtService {
         }
         return null;
     }
+
+    public String createTokenForOAuth2(String email) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("type", "OAUTH2_USER");
+        return createToken(claims, email, timeExp);
+    }
 }
